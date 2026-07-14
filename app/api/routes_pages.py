@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -34,7 +36,10 @@ def admin_sessions(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/admin/sessions/{session_id}", response_class=HTMLResponse)
 def admin_detail(request: Request, session_id: str, db: Session = Depends(get_db)):
-    item = SessionRepository(db).get(session_id)
+    try:
+        valid_session_id = str(uuid.UUID(session_id))
+    except ValueError as exc:
+        raise HTTPException(422, "ID de atendimento inválido.") from exc
+    item = SessionRepository(db).get(valid_session_id)
     if not item: raise HTTPException(404, "Atendimento não encontrado.")
     return templates.TemplateResponse(request, "summary.html", {"session": item, "summary": build_summary(item), "admin": True})
-

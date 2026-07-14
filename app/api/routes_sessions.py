@@ -34,7 +34,7 @@ def get_or_404(repo: SessionRepository, session_id: str):
 def create(payload: SessionCreate, repo: SessionRepository = Depends(repository)):
     try:
         item, node = DiagnosticService(repo).create_session(payload)
-        return {"session": SessionRead.model_validate(item), "node": node}
+        return {"session": SessionRead.model_validate(item), "node": node, "can_go_back": False}
     except (DiagnosticError, KnowledgeBaseError) as exc:
         raise HTTPException(422, str(exc)) from exc
 
@@ -44,7 +44,11 @@ def read(session_id: str, repo: SessionRepository = Depends(repository)):
     item = get_or_404(repo, session_id)
     try: node = DiagnosticService(repo).current_node(item)
     except (DiagnosticError, KnowledgeBaseError) as exc: raise HTTPException(503, str(exc)) from exc
-    return {"session": SessionRead.model_validate(item), "node": node}
+    return {
+        "session": SessionRead.model_validate(item),
+        "node": node,
+        "can_go_back": repo.has_answer(item.id),
+    }
 
 
 @router.post("/{session_id}/answer")
@@ -52,7 +56,7 @@ def answer(session_id: str, payload: AnswerRequest, repo: SessionRepository = De
     item = get_or_404(repo, session_id)
     try:
         node_id, node = DiagnosticService(repo).answer(item, payload)
-        return {"node_id": node_id, "node": node}
+        return {"node_id": node_id, "node": node, "can_go_back": True}
     except (DiagnosticError, KnowledgeBaseError) as exc: raise HTTPException(422, str(exc)) from exc
 
 
@@ -61,7 +65,7 @@ def continue_flow(session_id: str, repo: SessionRepository = Depends(repository)
     item = get_or_404(repo, session_id)
     try:
         node_id, node = DiagnosticService(repo).continue_after_solution(item)
-        return {"node_id": node_id, "node": node}
+        return {"node_id": node_id, "node": node, "can_go_back": repo.has_answer(item.id)}
     except (DiagnosticError, KnowledgeBaseError) as exc: raise HTTPException(422, str(exc)) from exc
 
 
@@ -80,7 +84,12 @@ def solution_result(session_id: str, payload: SolutionResultRequest, repo: Sessi
         raise HTTPException(422, str(exc)) from exc
     if next_step:
         node_id, node = next_step
-        return {"status": "in_progress", "node_id": node_id, "node": node}
+        return {
+            "status": "in_progress",
+            "node_id": node_id,
+            "node": node,
+            "can_go_back": repo.has_answer(item.id),
+        }
     repo.finish(item, "unresolved", payload.feedback)
     logger.info("Sessão finalizada: %s (unresolved)", item.id)
     return {"status": "unresolved", "summary": build_summary(repo.get(item.id))}
@@ -91,7 +100,7 @@ def back(session_id: str, repo: SessionRepository = Depends(repository)):
     item = get_or_404(repo, session_id)
     try:
         node_id, node = DiagnosticService(repo).back(item)
-        return {"node_id": node_id, "node": node}
+        return {"node_id": node_id, "node": node, "can_go_back": repo.has_answer(item.id)}
     except (DiagnosticError, KnowledgeBaseError) as exc:
         raise HTTPException(422, str(exc)) from exc
 
@@ -101,6 +110,10 @@ def finish(session_id: str, payload: FinishRequest, repo: SessionRepository = De
     item = get_or_404(repo, session_id)
     if payload.status == "not_tested":
         return {"status": "in_progress", "message": "Atendimento mantido em andamento."}
+    try:
+        DiagnosticService(repo).validate_finish(item, payload.status)
+    except (DiagnosticError, KnowledgeBaseError) as exc:
+        raise HTTPException(422, str(exc)) from exc
     repo.finish(item, payload.status, payload.feedback)
     logger.info("Sessão finalizada: %s (%s)", item.id, payload.status)
     return {"status": item.status, "summary": build_summary(repo.get(item.id))}

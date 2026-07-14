@@ -15,6 +15,10 @@ def test_rejects_invalid_category(client, session_payload):
 
 def test_finish_resolved_and_summary(client, session_payload):
     session_id = client.post("/api/sessions", json=session_payload).json()["session"]["id"]
+    client.post(
+        f"/api/sessions/{session_id}/answer",
+        json={"node_id": "excel_001", "value": "no"},
+    )
     response = client.post(f"/api/sessions/{session_id}/finish", json={"status": "resolved", "feedback": "Funcionou"})
     assert response.status_code == 200
     assert response.json()["status"] == "resolved"
@@ -24,7 +28,19 @@ def test_finish_resolved_and_summary(client, session_payload):
 
 def test_finish_unresolved(client, session_payload):
     session_id = client.post("/api/sessions", json=session_payload).json()["session"]["id"]
+    client.post(
+        f"/api/sessions/{session_id}/answer",
+        json={"node_id": "excel_001", "value": "no"},
+    )
+    client.post(f"/api/sessions/{session_id}/solution-result", json={"result": "unresolved"})
+    client.post(f"/api/sessions/{session_id}/solution-result", json={"result": "unresolved"})
     response = client.post(f"/api/sessions/{session_id}/finish", json={"status": "unresolved"})
     assert response.status_code == 200
     assert response.json()["status"] == "unresolved"
 
+
+def test_cannot_finish_before_trying_available_solutions(client, session_payload):
+    session_id = client.post("/api/sessions", json=session_payload).json()["session"]["id"]
+    response = client.post(f"/api/sessions/{session_id}/finish", json={"status": "unresolved"})
+    assert response.status_code == 422
+    assert "orientação" in response.json()["detail"]

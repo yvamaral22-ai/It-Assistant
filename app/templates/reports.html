@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Relatórios · IT Self-Service Assistant{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', path='css/reports.css') }}"><link rel="stylesheet" href="{{ url_for('static', path='css/insights.css') }}">{% endblock %}
+{% block content %}
+<div class="warning"><strong>Dados internos:</strong> este painel contém nomes e computadores. Ele não possui autenticação e deve permanecer restrito ao ambiente local.</div>
+
+<section class="report-heading">
+  <div><span class="eyebrow">INTELIGÊNCIA OPERACIONAL</span><h1>Relatórios de atendimento</h1><p>Entenda a demanda, a recorrência e a efetividade do autoatendimento.</p></div>
+  <a class="secondary export-link" href="/admin/reports/export.csv{% if request.url.query %}?{{ request.url.query }}{% endif %}">Exportar CSV</a>
+</section>
+
+<form class="panel report-filters" method="get">
+  <label>Data inicial<input type="date" name="date_from" value="{{ filters.date_from or '' }}"></label>
+  <label>Data final<input type="date" name="date_to" value="{{ filters.date_to or '' }}"></label>
+  <label>Categoria<select name="category"><option value="">Todas</option>{% for item in categories %}<option value="{{ item.slug }}" {% if filters.category == item.slug %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></label>
+  <label>Status<select name="status"><option value="">Todos</option><option value="resolved" {% if filters.status == 'resolved' %}selected{% endif %}>Resolvido</option><option value="unresolved" {% if filters.status == 'unresolved' %}selected{% endif %}>Não resolvido</option><option value="in_progress" {% if filters.status == 'in_progress' %}selected{% endif %}>Em andamento</option><option value="abandoned" {% if filters.status == 'abandoned' %}selected{% endif %}>Abandonado</option></select></label>
+  <div class="filter-actions"><button class="primary" type="submit">Aplicar filtros</button><a href="/admin/reports">Limpar</a></div>
+</form>
+
+<section class="kpi-grid" aria-label="Indicadores principais">
+  <article class="kpi"><small>Atendimentos</small><strong>{{ report.totals.total }}</strong><span>No período selecionado</span></article>
+  <article class="kpi success"><small>Resolvidos</small><strong>{{ report.totals.resolved }}</strong><span>{{ report.totals.resolution_rate }}% de resolução</span></article>
+  <article class="kpi danger"><small>Não resolvidos</small><strong>{{ report.totals.unresolved }}</strong><span>Encaminhados ao suporte</span></article>
+  <article class="kpi"><small>Em andamento</small><strong>{{ report.totals.in_progress }}</strong><span>{{ report.totals.abandoned }} abandonados</span></article>
+</section>
+
+<section class="auto-insights" aria-label="Conclusões automáticas">
+  {% for insight in report.insights %}<article class="auto-insight {{ insight.level }}"><small>ANÁLISE AUTOMÁTICA</small><strong>{{ insight.title }}</strong><p>{{ insight.text }}</p></article>{% endfor %}
+</section>
+
+{% macro ranking(title, subtitle, items, maximum, extra_class='') -%}
+<article class="panel report-card {{ extra_class }}"><header><div><h2>{{ title }}</h2><p>{{ subtitle }}</p></div></header>
+  {% if items %}<ol class="ranking">{% for item in items %}<li><div class="rank-line"><span title="{{ item.name }}">{{ item.name }}</span><strong>{{ item.count }}</strong></div><div class="rank-track"><i style="width: {{ (item.count * 100 / maximum)|round(1) }}%"></i></div><small>{{ item.resolution_rate }}% resolvidos</small></li>{% endfor %}</ol>
+  {% else %}<p class="empty-state">Ainda não há dados suficientes para este indicador.</p>{% endif %}
+</article>
+{%- endmacro %}
+
+<section class="report-grid">
+  {{ ranking('Categorias mais acionadas', 'Volume e taxa de resolução por categoria.', report.categories, max_values.categories) }}
+  {{ ranking('Problemas mais recorrentes', 'Primeiro sintoma identificado em cada diagnóstico.', report.problems, max_values.problems, 'wide') }}
+</section>
+
+<section class="panel trend-card"><header><div><h2>Atendimentos ao longo do tempo</h2><p>Quantidade de diagnósticos iniciados por dia.</p></div></header>
+  {% if report.trend %}<div class="trend" aria-label="Gráfico de atendimentos por dia">{% for item in report.trend %}<div class="trend-column" title="{{ item.day }}: {{ item.count }}"><strong>{{ item.count }}</strong><i style="height: {{ 16 + (item.count * 100 / max_values.trend) }}px"></i><small>{{ item.day[5:] }}</small></div>{% endfor %}</div>
+  {% else %}<p class="empty-state">Nenhum atendimento no período selecionado.</p>{% endif %}
+</section>
+
+<section class="report-grid three-columns">
+  {{ ranking('Pessoas com mais atendimentos', 'Ajuda a identificar recorrência e oportunidade de capacitação.', report.people, max_values.people) }}
+  {{ ranking('Máquinas com mais ocorrências', 'Indica equipamentos que podem precisar de análise preventiva.', report.machines, max_values.machines) }}
+  {{ ranking('Setores com maior demanda', 'Distribuição do volume por área informada.', report.departments, max_values.departments) }}
+</section>
+
+<section class="insight panel"><span class="eyebrow">COMO USAR ESTES DADOS</span><h2>Ações sugeridas</h2><ul><li>Transforme problemas recorrentes e bem resolvidos em novos artigos de autoatendimento.</li><li>Investigue máquinas com volume repetido antes que gerem indisponibilidade.</li><li>Use categorias com baixa resolução para revisar perguntas e soluções.</li><li>Valide recorrências com o setor antes de concluir que a causa está na pessoa ou equipamento.</li></ul></section>
+{% endblock %}

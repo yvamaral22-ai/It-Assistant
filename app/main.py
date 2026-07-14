@@ -1,10 +1,11 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import routes_diagnostics, routes_pages, routes_sessions
+from app.api import routes_diagnostics, routes_pages, routes_reports, routes_sessions
 from app.config import BASE_DIR, get_settings
 from app.database import initialize_database
 
@@ -12,19 +13,22 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = logging.getLogger(__name__)
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    (BASE_DIR / "data").mkdir(exist_ok=True)
+    initialize_database()
+    logger.info("Aplicação inicializada")
+    yield
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
-    application = FastAPI(title=settings.app_name, debug=settings.app_debug)
+    application = FastAPI(title=settings.app_name, debug=settings.app_debug, lifespan=lifespan)
     application.mount("/static", StaticFiles(directory=BASE_DIR / "app" / "static"), name="static")
     application.include_router(routes_pages.router)
     application.include_router(routes_sessions.router)
     application.include_router(routes_diagnostics.router)
-
-    @application.on_event("startup")
-    def startup() -> None:
-        (BASE_DIR / "data").mkdir(exist_ok=True)
-        initialize_database()
-        logger.info("Aplicação inicializada")
+    application.include_router(routes_reports.router)
 
     @application.get("/health")
     def health(): return {"status": "ok", "application": settings.app_name}
@@ -38,4 +42,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-

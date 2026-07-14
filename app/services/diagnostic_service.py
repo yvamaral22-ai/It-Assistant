@@ -100,3 +100,16 @@ class DiagnosticService:
             raise DiagnosticError("Não há uma pergunta anterior para retornar.")
         graph = self.knowledge.load(session.category)
         return node_id, graph["nodes"][node_id]
+
+    def validate_finish(self, session: SupportSession, status: str) -> None:
+        """Prevent API clients from bypassing the diagnostic attempts."""
+        if session.status != "in_progress":
+            raise DiagnosticError("Este atendimento já foi encerrado.")
+        if status == "abandoned":
+            return
+        graph = self.knowledge.load(session.category)
+        node = graph["nodes"].get(session.current_node_id)
+        if not node or node.get("type") != "solution":
+            raise DiagnosticError("Avalie uma orientação antes de encerrar o atendimento.")
+        if status == "unresolved" and node.get("unresolved_next"):
+            raise DiagnosticError("Ainda existem outras orientações seguras para testar.")

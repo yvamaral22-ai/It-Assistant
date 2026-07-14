@@ -1,0 +1,27 @@
+:root { --blue: #0868b9; }
+
+.topbar {
+  height: auto;
+  min-height: 88px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  color: var(--navy);
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar a { color: var(--navy); }
+.topbar nav { display: flex; gap: 22px; }
+.topbar nav a:hover { color: var(--blue); }
+.brand { display: flex; align-items: center; gap: 22px; font-size: 18px; }
+.brand img { display: block; width: 145px; height: auto; }
+.brand span { padding-left: 22px; color: var(--navy); border-left: 1px solid var(--line); }
+.admin-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.admin-title .primary { text-decoration: none; }
+
+@media (max-width: 560px) {
+  .brand { gap: 12px; }
+  .brand img { width: 88px; }
+  .brand span { padding-left: 12px; font-size: 14px; }
+  .topbar nav { display: none; }
+}

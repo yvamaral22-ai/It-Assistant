@@ -8,9 +8,12 @@ MVP local de autoatendimento de TI. O sistema conduz o usuário por perguntas ar
 - Diagnóstico de uma pergunta por vez, controlado por grafos JSON validados.
 - Orientações para Excel, Outlook, navegador, impressora, Windows, rede e outros problemas.
 - Registro de sessões e interações em SQLite.
+- Até três tentativas de solução antes do encerramento como não resolvido.
+- Retorno seguro à pergunta anterior para alterar uma resposta.
 - Encerramento como resolvido, não resolvido ou abandonado.
 - Resumo técnico copiável para a área de transferência.
 - Histórico local em `/admin/sessions`.
+- Relatórios operacionais em `/admin/reports`, com filtros, indicadores, rankings e exportação CSV.
 - Clientes preparados, porém desabilitados, para GLPI, Active Directory e Microsoft Graph.
 
 ## Tecnologias e estrutura
@@ -65,7 +68,7 @@ Exemplo mínimo:
 
 ## Histórico e segurança
 
-O histórico fica em <http://127.0.0.1:8000/admin/sessions>. **O painel administrativo não possui autenticação neste MVP e jamais deve ser exposto em produção.** Antes de publicar, implemente autenticação corporativa, autorização por perfil, HTTPS, CSRF para formulários administrativos, retenção e auditoria.
+O histórico fica em <http://127.0.0.1:8000/admin/sessions> e os relatórios em <http://127.0.0.1:8000/admin/reports>. **Os painéis administrativos não possuem autenticação neste MVP e jamais devem ser expostos em produção.** Antes de publicar, implemente autenticação corporativa, autorização por perfil, HTTPS, CSRF para formulários administrativos, retenção e auditoria.
 
 O sistema não solicita nem armazena senhas, não executa comandos enviados pelo navegador e usa ORM. Não registre segredos na descrição. Copie `.env.example` somente se precisar alterar configurações e troque `SECRET_KEY` antes de qualquer implantação; não versione `.env`.
 
@@ -81,3 +84,8 @@ Próximas etapas recomendadas: autenticação e autorização; migrações com A
 ## Rotas
 
 `GET /`, `/health`, `/diagnostic/{category}`, `/admin/sessions`, `/admin/sessions/{id}`; `POST /api/sessions`, `POST /api/sessions/{id}/answer`, `POST /api/sessions/{id}/finish`; `GET /api/sessions/{id}` e `/api/sessions/{id}/summary`.
+
+
+
+
+http://127.0.0.1:8000/

@@ -1,0 +1,19 @@
+.auto-insights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.auto-insight {
+  padding: 18px;
+  background: #eaf4ff;
+  border-left: 4px solid var(--blue);
+  border-radius: 10px;
+}
+
+.auto-insight.warning { background: #fff7e6; border-left-color: #d78b09; }
+.auto-insight.danger { background: #fff0ee; border-left-color: var(--danger); }
+.auto-insight small { display: block; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.auto-insight strong { display: block; margin: 5px 0; }
+.auto-insight p { margin: 0; color: #445064; }

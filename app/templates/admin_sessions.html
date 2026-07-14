@@ -1,6 +1,5 @@
 {% extends "base.html" %}{% block title %}Histórico local{% endblock %}{% block content %}
 <div class="warning"><strong>Aviso de segurança:</strong> este painel não possui autenticação e não deve ser publicado ou usado em produção.</div>
-<section class="panel"><h1>Histórico de atendimentos</h1><div class="table-wrap"><table><thead><tr><th>ID</th><th>Usuário</th><th>Computador</th><th>Categoria</th><th>Status</th><th>Início</th><th>Término</th></tr></thead><tbody>
+<section class="panel"><div class="admin-title"><h1>Histórico de atendimentos</h1><a class="primary" href="/admin/reports">Ver relatórios</a></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Usuário</th><th>Computador</th><th>Categoria</th><th>Status</th><th>Início</th><th>Término</th></tr></thead><tbody>
 {% for item in sessions %}<tr><td><a href="/admin/sessions/{{ item.id }}">{{ item.id[:8] }}…</a></td><td>{{ item.user_name or '—' }}</td><td>{{ item.computer_name or '—' }}</td><td>{{ item.category|title }}</td><td><span class="status {{ item.status }}">{{ item.status }}</span></td><td>{{ item.started_at.strftime('%d/%m/%Y %H:%M') }}</td><td>{{ item.finished_at.strftime('%d/%m/%Y %H:%M') if item.finished_at else '—' }}</td></tr>
 {% else %}<tr><td colspan="7">Nenhum atendimento registrado.</td></tr>{% endfor %}</tbody></table></div></section>{% endblock %}
-

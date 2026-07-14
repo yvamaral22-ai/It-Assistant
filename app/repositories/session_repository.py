@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Interaction, SupportSession
@@ -25,6 +25,15 @@ class SessionRepository:
     def list_all(self) -> list[SupportSession]:
         statement = select(SupportSession).order_by(SupportSession.started_at.desc())
         return list(self.db.scalars(statement))
+
+    def has_answer(self, session_id: str) -> bool:
+        count = self.db.scalar(
+            select(func.count(Interaction.id)).where(
+                Interaction.session_id == session_id,
+                Interaction.node_type == "question",
+            )
+        )
+        return bool(count)
 
     def add_interaction(self, item: Interaction) -> None:
         self.db.add(item)
