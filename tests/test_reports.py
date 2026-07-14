@@ -12,7 +12,8 @@ def create_finished_session(client, payload, resolved=True):
     return session_id
 
 
-def test_reports_page_has_operational_rankings(client, session_payload):
+def test_reports_page_has_operational_rankings(authenticated_client, session_payload):
+    client = authenticated_client
     create_finished_session(client, session_payload)
     second = {**session_payload, "user_name": "Maria", "computer_name": "PC-02", "category": "windows"}
     create_finished_session(client, second)
@@ -23,15 +24,19 @@ def test_reports_page_has_operational_rankings(client, session_payload):
     assert "Categorias mais acionadas" in response.text
     assert "ANÁLISE AUTOMÁTICA" in response.text
     assert "Pessoas com mais atendimentos" in response.text
+    assert "Eficácia das soluções" in response.text
+    assert "Resolução por tentativa" in response.text
     assert "PC-02" in response.text
 
 
-def test_report_filters_reject_invalid_period(client):
+def test_report_filters_reject_invalid_period(authenticated_client):
+    client = authenticated_client
     response = client.get("/admin/reports?date_from=2026-07-20&date_to=2026-07-01")
     assert response.status_code == 422
 
 
-def test_reports_csv_export_and_formula_protection(client, session_payload):
+def test_reports_csv_export_and_formula_protection(authenticated_client, session_payload):
+    client = authenticated_client
     payload = {**session_payload, "user_name": "=DANGEROUS()"}
     create_finished_session(client, payload)
     response = client.get("/admin/reports/export.csv")
@@ -40,7 +45,8 @@ def test_reports_csv_export_and_formula_protection(client, session_payload):
     assert "'=DANGEROUS()" in response.text
 
 
-def test_report_category_filter(client, session_payload):
+def test_report_category_filter(authenticated_client, session_payload):
+    client = authenticated_client
     create_finished_session(client, session_payload)
     response = client.get("/admin/reports?category=excel")
     assert response.status_code == 200

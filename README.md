@@ -1,36 +1,34 @@
 # IT Self-Service Assistant
 
-MVP local de autoatendimento de TI. O sistema conduz o usuário por perguntas armazenadas em JSON, apresenta orientações seguras e registra um resumo para encaminhamento futuro ao suporte ou GLPI.
+Sistema interno de autoatendimento de TI. Conduz o usuário por perguntas em JSON, apresenta até três orientações seguras, registra o resultado e prepara um resumo para o suporte ou futura integração GLPI.
 
 ## Funcionalidades
 
-- Página inicial responsiva com identificação opcional e sete categorias.
-- Diagnóstico de uma pergunta por vez, controlado por grafos JSON validados.
-- Orientações para Excel, Outlook, navegador, impressora, Windows, rede e outros problemas.
-- Registro de sessões e interações em SQLite.
-- Até três tentativas de solução antes do encerramento como não resolvido.
-- Retorno seguro à pergunta anterior para alterar uma resposta.
-- Encerramento como resolvido, não resolvido ou abandonado.
-- Resumo técnico copiável para a área de transferência.
-- Histórico local em `/admin/sessions`.
-- Relatórios operacionais em `/admin/reports`, com filtros, indicadores, rankings e exportação CSV.
-- Clientes preparados, porém desabilitados, para GLPI, Active Directory e Microsoft Graph.
+- Sete categorias: Excel, Outlook, navegador, impressora, Windows, rede e outros.
+- Diagnóstico de uma pergunta por vez, retorno seguro e retomada de sessão.
+- Busca de categoria, impressão, resumo copiável e avaliação de 1 a 5.
+- Dados estruturados de localidade, patrimônio, modelo, urgência, impacto e tipo de problema.
+- Histórico protegido e relatórios com filtros e CSV.
+- Eficácia por solução, resolução por tentativa, tempo médio, recorrência e satisfação.
+- Papéis `master`, `analyst`, `editor` e `reader`.
+- Rascunho, publicação, comparação, restauração e auditoria dos fluxos JSON.
+- Backup preventivo, logs rotativos, manutenção e endpoints de prontidão.
+- Clientes desabilitados e preparados para GLPI, Active Directory e Microsoft Graph.
 
-## Tecnologias e estrutura
+## Tecnologias
 
-Python 3.12, FastAPI, Uvicorn, SQLAlchemy 2, SQLite, Pydantic, Jinja2, HTML, CSS e JavaScript puro. `app/api` contém HTTP; `services` contém regras de negócio; `repositories` isola banco e JSON; `models` e `schemas` definem dados; `integrations` contém stubs; `templates` e `static` formam a interface; `knowledge_base` guarda os fluxos; `tests` usa banco temporário.
+Python 3.12 ou superior compatível, FastAPI, Uvicorn, SQLAlchemy 2, Alembic, SQLite/PostgreSQL, Pydantic, Jinja2, HTML, CSS e JavaScript puro. Não há dependências de frontend por CDN.
 
-## Instalação rápida no Windows
+## Instalação no Windows
 
-Pré-requisitos: Python 3.12 (ou versão estável compatível) disponível no `PATH` e acesso à internet apenas na primeira instalação das dependências.
+Pré-requisito: Python no `PATH`. Execute:
 
 ```bat
-git clone <endereco-do-repositorio>
-cd It-Assistant
+cd /d X:\It-Assistant
 scripts\start_windows.bat
 ```
 
-Depois, acesse <http://127.0.0.1:8000>. Após instalar as dependências, a aplicação funciona sem internet.
+O script cria o ambiente virtual, instala dependências, faz backup preventivo, aplica migrações, verifica o master e inicia em <http://127.0.0.1:8000>. Na primeira execução, guarde a senha master exibida.
 
 Instalação manual:
 
@@ -39,53 +37,79 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python scripts\initialize_database.py
+python scripts\create_master_user.py --if-missing
 python run.py
+```
+
+Para redefinir o master localmente:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\create_master_user.py --username master
 ```
 
 ## Testes
 
 ```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check app scripts tests migrations
 ```
 
-Os testes usam SQLite temporário e não alteram `data/it_assistant.db`.
+Os testes usam SQLite temporário e validam regras, segurança, relatórios, versionamento e migrações.
+
+## Usuários e permissões
+
+- `master`: acesso total, usuários, auditoria, conteúdo, histórico e relatórios.
+- `analyst`: histórico, relatórios e exportação.
+- `editor`: edição e versionamento da base de conhecimento.
+- `reader`: histórico e relatórios sem exportação.
+
+O master gerencia acessos em `/admin/control/users`. O último master ativo não pode ser removido. Credenciais são armazenadas somente como hash `scrypt` com salt; nunca use a senha corporativa.
 
 ## Base de conhecimento
 
-Para adicionar uma categoria:
+As categorias ficam em `app/knowledge_base`. O painel `/admin/control` cria versões no banco. Salvar gera um rascunho validado; publicar troca o JSON ativo e preserva a versão anterior.
 
-1. Inclua nome, `slug`, ícone e descrição em `app/knowledge_base/categories.json`.
-2. Crie `app/knowledge_base/<slug>.json` com `category`, `title`, `start_node` e `nodes`.
-3. Use nós `question`, `solution` ou `end`. Perguntas exigem `options`; cada opção exige `label`, `value` e `next`.
-4. Em soluções, use `title`, `text`, `steps` e `ask_if_resolved`. Um `next` opcional pode continuar o fluxo.
-5. Execute os testes. A validação rejeita início ou destinos inexistentes, perguntas sem opções, tipos inválidos, JSON corrompido e ciclos alcançáveis.
+Cada arquivo contém `category`, `title`, `start_node` e `nodes`. Nós podem ser `question`, `solution` ou `end`. Perguntas exigem opções com `label`, `value` e `next`. Soluções usam `title`, `text`, `steps`, `ask_if_resolved` e opcionalmente `unresolved_next`, `media` e `media_alt`.
 
-Exemplo mínimo:
+A validação rejeita JSON inválido, início ou destino inexistente, pergunta sem opções, tipo inválido e ciclos alcançáveis.
 
-```json
-{"category":"exemplo","title":"Exemplo","start_node":"q1","nodes":{"q1":{"type":"question","text":"Funcionou?","options":[{"label":"Não","value":"no","next":"s1"}]},"s1":{"type":"solution","title":"Orientação","text":"Faça um teste seguro.","steps":["Passo 1"],"ask_if_resolved":true}}}
+## Banco, backup e operação
+
+Alembic aplica migrações automaticamente. Comandos úteis:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\initialize_database.py
+.\.venv\Scripts\python.exe scripts\backup_database.py
+.\.venv\Scripts\python.exe -m alembic current
 ```
 
-## Histórico e segurança
+Backups SQLite ficam em `data/backups`; logs rotativos, em `data/logs/application.log`. `/health` confirma o processo e `/ready` testa banco e conhecimento. `MAINTENANCE_MODE=true` ativa a página de manutenção após reinício.
 
-O histórico fica em <http://127.0.0.1:8000/admin/sessions> e os relatórios em <http://127.0.0.1:8000/admin/reports>. **Os painéis administrativos não possuem autenticação neste MVP e jamais devem ser expostos em produção.** Antes de publicar, implemente autenticação corporativa, autorização por perfil, HTTPS, CSRF para formulários administrativos, retenção e auditoria.
+Para PostgreSQL, configure:
 
-O sistema não solicita nem armazena senhas, não executa comandos enviados pelo navegador e usa ORM. Não registre segredos na descrição. Copie `.env.example` somente se precisar alterar configurações e troque `SECRET_KEY` antes de qualquer implantação; não versione `.env`.
+```env
+DATABASE_URL=postgresql+psycopg://usuario:senha@servidor/banco
+```
 
-## Limitações e próximos passos
+Consulte `deployment/README.md` para inicialização automática, backup diário, IIS, HTTPS e DNS interno.
 
-- Sem autenticação, upload, execução remota, IA ou integração externa real.
-- “Voltar” altera somente a tela; respostas já registradas permanecem no histórico para auditoria.
-- SQLite atende uso local e de baixo volume, não implantação corporativa concorrente.
-- O resumo é copiado; nenhum ticket é aberto automaticamente.
+## Segurança
 
-Próximas etapas recomendadas: autenticação e autorização; migrações com Alembic; PostgreSQL; proteção CSRF e política de retenção; testes E2E e acessibilidade; então implementar GLPI com cofre de segredos e conta técnica. Active Directory exigirá conta de serviço, privilégio mínimo, autorização e auditoria; Microsoft Graph exigirá registro de aplicativo, permissões mínimas e autenticação segura. Nenhuma ação administrativa deve ser adicionada sem aprovação formal.
+- Administração, histórico, relatórios e exportações exigem autenticação e permissão.
+- Formulários administrativos usam CSRF, cookie assinado e limitação de login.
+- A auditoria não registra senhas.
+- CSV é protegido contra fórmulas de planilha.
+- O diagnóstico não solicita senha, não executa comandos e não aceita código do navegador.
+- Em produção, configure `APP_ENV=production`, `APP_DEBUG=false`, `SECRET_KEY` forte e HTTPS.
 
-## Rotas
+## Limitações
 
-`GET /`, `/health`, `/diagnostic/{category}`, `/admin/sessions`, `/admin/sessions/{id}`; `POST /api/sessions`, `POST /api/sessions/{id}/answer`, `POST /api/sessions/{id}/finish`; `GET /api/sessions/{id}` e `/api/sessions/{id}/summary`.
+- SQLite é adequado para piloto e baixo volume; use PostgreSQL para concorrência corporativa.
+- GLPI, AD e Microsoft Graph ainda não realizam chamadas reais.
+- DNS, certificado e regras de firewall dependem da infraestrutura da empresa.
+- Não há execução remota, upload, agente local ou inteligência artificial.
 
+## Rotas principais
 
-
-
-http://127.0.0.1:8000/
+Públicas: `/`, `/health`, `/ready`, `/diagnostic/{category}` e API de sessões. Protegidas: `/admin/sessions`, `/admin/reports`, `/admin/control`, usuários, auditoria e versionamento de conhecimento.

@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+import secrets
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -17,6 +18,10 @@ class Settings(BaseSettings):
     glpi_enabled: bool = False
     ad_enabled: bool = False
     microsoft_graph_enabled: bool = False
+    maintenance_mode: bool = False
+    log_level: str = "INFO"
+    log_dir: str = "data/logs"
+    backup_retention_days: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -25,3 +30,16 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     return Settings()
 
+
+def get_session_secret(settings: Settings) -> str:
+    """Use the configured secret or persist a local-only generated secret."""
+    if settings.secret_key != "change-this-value":
+        return settings.secret_key
+    data_dir = BASE_DIR / "data"
+    data_dir.mkdir(exist_ok=True)
+    secret_file = data_dir / ".session_secret"
+    if secret_file.exists():
+        return secret_file.read_text(encoding="utf-8").strip()
+    value = secrets.token_urlsafe(48)
+    secret_file.write_text(value, encoding="utf-8")
+    return value

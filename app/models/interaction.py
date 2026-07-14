@@ -21,6 +21,7 @@ class Interaction(Base):
     selected_value: Mapped[str | None] = mapped_column(String(500))
     selected_label: Mapped[str | None] = mapped_column(String(500))
     displayed_solution: Mapped[str | None] = mapped_column(Text)
+    solution_result: Mapped[str | None] = mapped_column(String(30))
+    result_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     session: Mapped["SupportSession"] = relationship(back_populates="interactions")
-

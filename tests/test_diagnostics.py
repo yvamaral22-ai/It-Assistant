@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from app.repositories.knowledge_repository import KnowledgeBaseError, KnowledgeRepository

@@ -6,9 +6,27 @@ const api = async (url, options = {}) => {
 };
 
 const startForm = document.querySelector('#start-form');
+const existingSessionId = sessionStorage.getItem('it-session-id');
+const resumeBox = document.querySelector('#resume-session');
+if (resumeBox && existingSessionId) api(`/api/sessions/${existingSessionId}`).then(result => {
+  if (result.session.status === 'in_progress') {
+    resumeBox.hidden = false;
+    resumeBox.innerHTML = `<div><strong>Você tem um diagnóstico em andamento.</strong><span>Categoria: ${result.session.category}</span></div><a class="primary" href="/diagnostic/${encodeURIComponent(result.session.category)}">Retomar diagnóstico</a>`;
+  } else sessionStorage.removeItem('it-session-id');
+}).catch(() => sessionStorage.removeItem('it-session-id'));
+
+const categorySearch = document.querySelector('#category-search');
+if (categorySearch) categorySearch.addEventListener('input', () => {
+  const term = categorySearch.value.trim().toLocaleLowerCase('pt-BR'); let visible = 0;
+  document.querySelectorAll('.category').forEach(card => {
+    const matches = card.textContent.toLocaleLowerCase('pt-BR').includes(term);
+    card.hidden = !matches; if (matches) visible++;
+  });
+  document.querySelector('#category-empty').hidden = visible > 0;
+});
 if (startForm) startForm.addEventListener('submit', async event => {
   event.preventDefault(); const error = document.querySelector('#form-error'); error.textContent = '';
-  const payload = Object.fromEntries(new FormData(startForm));
+  const payload = Object.fromEntries([...new FormData(startForm)].filter(([, value]) => value !== ''));
   try {
     const result = await api('/api/sessions', {method: 'POST', body: JSON.stringify(payload)});
     sessionStorage.setItem('it-session-id', result.session.id);
@@ -30,21 +48,30 @@ if (root) {
         try { const result = await api(`/api/sessions/${sessionId}/answer`, {method:'POST',body:JSON.stringify({node_id:nodeId,value:button.dataset.value})}); canGoBack = true; render(result.node,result.node_id); } catch(exc){error.textContent=exc.message;}
       });
     } else if (node.type === 'solution') {
-      card.innerHTML = `<span class="eyebrow">ORIENTAÇÃO</span><h1>${escapeHtml(node.title)}</h1><p>${escapeHtml(node.text)}</p><ol class="steps">${(node.steps||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ol>${node.ask_if_resolved ? '<h2>A orientação resolveu o problema?</h2><button class="option finish" data-status="resolved">Sim, resolveu</button><button class="option finish" data-status="unresolved">Não resolveu</button><button class="option finish" data-status="not_tested">Ainda não testei</button>' : '<button class="primary" id="continue">Continuar</button>'}`;
+      card.innerHTML = `<span class="eyebrow">ORIENTAÇÃO</span><h1>${escapeHtml(node.title)}</h1><p>${escapeHtml(node.text)}</p>${node.media?`<img class="solution-media" src="/static/${escapeHtml(node.media)}" alt="${escapeHtml(node.media_alt||'Ilustração da orientação')}">`:''}<ol class="steps">${(node.steps||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ol>${node.ask_if_resolved ? '<h2>A orientação resolveu o problema?</h2><button class="option finish" data-status="resolved">Sim, resolveu</button><button class="option finish" data-status="unresolved">Não resolveu</button><button class="option finish" data-status="not_tested">Ainda não testei</button>' : '<button class="primary" id="continue">Continuar</button>'}`;
       card.querySelectorAll('.finish').forEach(button => button.onclick = () => solutionResult(button.dataset.status));
       const next = card.querySelector('#continue'); if(next) next.onclick = async()=>{const r=await api(`/api/sessions/${sessionId}/continue`,{method:'POST'});render(r.node,r.node_id)};
     } else { solutionResult('unresolved'); }
     document.querySelector('#back-button').hidden = !canGoBack;
+    card.focus();
   };
   const solutionResult = async status => {
     try { const result = await api(`/api/sessions/${sessionId}/solution-result`, {method:'POST',body:JSON.stringify({result:status})});
       if(status==='not_tested'){card.insertAdjacentHTML('beforeend','<p class="warning">Sem problema. A sessão continuará nesta orientação até você testar.</p>');return;}
       if(result.status === 'in_progress'){canGoBack=result.can_go_back;render(result.node,result.node_id);return;}
-      card.innerHTML=`<span class="eyebrow">${status==='resolved'?'CONCLUÍDO':'ENCAMINHAMENTO'}</span><h1>${status==='resolved'?'Que bom que funcionou!':'Resumo pronto para o suporte'}</h1><pre id="final-summary">${escapeHtml(result.summary)}</pre><button class="primary" data-copy-target="final-summary">Copiar resumo</button>`; bindCopy();
+      card.innerHTML=`<span class="eyebrow">${status==='resolved'?'CONCLUÍDO':'ENCAMINHAMENTO'}</span><h1>${status==='resolved'?'Que bom que funcionou!':'Resumo pronto para o suporte'}</h1><pre id="final-summary">${escapeHtml(result.summary)}</pre><div class="summary-actions"><button class="primary" data-copy-target="final-summary">Copiar resumo</button><button class="secondary" id="print-summary">Imprimir</button></div><section class="feedback-box"><h2>Como foi o atendimento?</h2><div class="rating" role="group" aria-label="Avaliação de uma a cinco estrelas">${[1,2,3,4,5].map(value=>`<button data-rating="${value}" aria-label="${value} estrela${value>1?'s':''}">★</button>`).join('')}</div><textarea id="feedback-comment" maxlength="1000" rows="2" placeholder="Comentário opcional"></textarea><p id="feedback-message" role="status"></p></section>`; bindCopy(); bindFeedback(); document.querySelector('#print-summary').onclick=()=>window.print(); sessionStorage.removeItem('it-session-id');
     } catch(exc){error.textContent=exc.message;}
   };
+  const bindFeedback = () => document.querySelectorAll('[data-rating]').forEach(button => button.onclick = async () => {
+    try {
+      const rating = Number(button.dataset.rating); const feedback = document.querySelector('#feedback-comment').value || null;
+      const result = await api(`/api/sessions/${sessionId}/feedback`, {method:'POST', body:JSON.stringify({rating,feedback})});
+      document.querySelectorAll('[data-rating]').forEach(item=>item.classList.toggle('selected',Number(item.dataset.rating)<=rating));
+      document.querySelector('#feedback-message').textContent=result.message;
+    } catch(exc){error.textContent=exc.message;}
+  });
   document.querySelector('#back-button').onclick=async()=>{try{const previous=await api(`/api/sessions/${sessionId}/back`,{method:'POST'});canGoBack=previous.can_go_back;error.textContent='';render(previous.node,previous.node_id);}catch(exc){error.textContent=exc.message;}};
-  document.querySelector('#leave-link').onclick=event=>{if(!confirm('Deseja abandonar este diagnóstico?'))event.preventDefault();else api(`/api/sessions/${sessionId}/finish`,{method:'POST',body:JSON.stringify({status:'abandoned'})});};
+  document.querySelector('#leave-link').onclick=async event=>{event.preventDefault();if(!confirm('Deseja abandonar este diagnóstico?'))return;try{await api(`/api/sessions/${sessionId}/finish`,{method:'POST',body:JSON.stringify({status:'abandoned'})});sessionStorage.removeItem('it-session-id');location.href='/';}catch(exc){error.textContent=exc.message;}};
   if(!sessionId){card.innerHTML='<p class="error">Sessão não encontrada. Volte ao início.</p>';} else api(`/api/sessions/${sessionId}`).then(r=>{canGoBack=r.can_go_back;render(r.node,r.session.current_node_id)}).catch(exc=>error.textContent=exc.message);
 }
 

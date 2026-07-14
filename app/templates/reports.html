@@ -2,7 +2,7 @@
 {% block title %}Relatórios · IT Self-Service Assistant{% endblock %}
 {% block styles %}<link rel="stylesheet" href="{{ url_for('static', path='css/reports.css') }}"><link rel="stylesheet" href="{{ url_for('static', path='css/insights.css') }}">{% endblock %}
 {% block content %}
-<div class="warning"><strong>Dados internos:</strong> este painel contém nomes e computadores. Ele não possui autenticação e deve permanecer restrito ao ambiente local.</div>
+<div class="warning"><strong>Dados internos:</strong> este painel contém nomes e computadores e está disponível somente para usuários autorizados.</div>
 
 <section class="report-heading">
   <div><span class="eyebrow">INTELIGÊNCIA OPERACIONAL</span><h1>Relatórios de atendimento</h1><p>Entenda a demanda, a recorrência e a efetividade do autoatendimento.</p></div>
@@ -23,6 +23,7 @@
   <article class="kpi danger"><small>Não resolvidos</small><strong>{{ report.totals.unresolved }}</strong><span>Encaminhados ao suporte</span></article>
   <article class="kpi"><small>Em andamento</small><strong>{{ report.totals.in_progress }}</strong><span>{{ report.totals.abandoned }} abandonados</span></article>
 </section>
+<section class="kpi-grid compact-kpis"><article class="kpi"><small>Avaliação média</small><strong>{{ '%.1f'|format(report.totals.average_rating) }}</strong><span>{{ report.totals.feedback_count }} avaliações</span></article><article class="kpi"><small>Chamados evitados</small><strong>{{ report.totals.resolved }}</strong><span>Diagnósticos resolvidos sem suporte</span></article><article class="kpi"><small>Tempo médio</small><strong>{{ report.totals.average_resolution_minutes }}</strong><span>minutos até o encerramento</span></article></section>
 
 <section class="auto-insights" aria-label="Conclusões automáticas">
   {% for insight in report.insights %}<article class="auto-insight {{ insight.level }}"><small>ANÁLISE AUTOMÁTICA</small><strong>{{ insight.title }}</strong><p>{{ insight.text }}</p></article>{% endfor %}
@@ -34,11 +35,14 @@
   {% else %}<p class="empty-state">Ainda não há dados suficientes para este indicador.</p>{% endif %}
 </article>
 {%- endmacro %}
+{% macro volume_ranking(title, subtitle, items, maximum) -%}<article class="panel report-card"><header><div><h2>{{ title }}</h2><p>{{ subtitle }}</p></div></header>{% if items %}<ol class="ranking">{% for item in items %}<li><div class="rank-line"><span>{{ item.name }}</span><strong>{{ item.count }}</strong></div><div class="rank-track"><i style="width: {{ (item.count * 100 / maximum)|round(1) }}%"></i></div></li>{% endfor %}</ol>{% else %}<p class="empty-state">Ainda não há dados suficientes.</p>{% endif %}</article>{%- endmacro %}
 
 <section class="report-grid">
   {{ ranking('Categorias mais acionadas', 'Volume e taxa de resolução por categoria.', report.categories, max_values.categories) }}
   {{ ranking('Problemas mais recorrentes', 'Primeiro sintoma identificado em cada diagnóstico.', report.problems, max_values.problems, 'wide') }}
 </section>
+<section class="report-grid"><div>{{ ranking('Eficácia das soluções', 'Taxa de sucesso de cada orientação avaliada.', report.solutions, max_values.solutions) }}</div><div>{{ volume_ranking('Resolução por tentativa', 'Em qual orientação o usuário confirmou a solução.', report.attempts, max_values.attempts) }}</div></section>
+<section class="report-grid"><div>{{ ranking('Tipos de problema', 'Classificação estruturada informada na abertura.', report.issue_types, max_values.issue_types) }}</div><div>{{ ranking('Máquinas recorrentes', 'Computadores com maior volume de atendimentos.', report.machines, max_values.machines) }}</div></section>
 
 <section class="panel trend-card"><header><div><h2>Atendimentos ao longo do tempo</h2><p>Quantidade de diagnósticos iniciados por dia.</p></div></header>
   {% if report.trend %}<div class="trend" aria-label="Gráfico de atendimentos por dia">{% for item in report.trend %}<div class="trend-column" title="{{ item.day }}: {{ item.count }}"><strong>{{ item.count }}</strong><i style="height: {{ 16 + (item.count * 100 / max_values.trend) }}px"></i><small>{{ item.day[5:] }}</small></div>{% endfor %}</div>
@@ -50,6 +54,7 @@
   {{ ranking('Máquinas com mais ocorrências', 'Indica equipamentos que podem precisar de análise preventiva.', report.machines, max_values.machines) }}
   {{ ranking('Setores com maior demanda', 'Distribuição do volume por área informada.', report.departments, max_values.departments) }}
 </section>
+<section class="report-grid three-columns">{{ ranking('Patrimônios reincidentes', 'Equipamentos identificados com mais ocorrências.', report.assets, max_values.assets) }}{{ ranking('Localidades', 'Distribuição dos atendimentos por local.', report.locations, max_values.locations) }}{{ ranking('Setores', 'Demanda por área informada.', report.departments, max_values.departments) }}</section>
 
 <section class="insight panel"><span class="eyebrow">COMO USAR ESTES DADOS</span><h2>Ações sugeridas</h2><ul><li>Transforme problemas recorrentes e bem resolvidos em novos artigos de autoatendimento.</li><li>Investigue máquinas com volume repetido antes que gerem indisponibilidade.</li><li>Use categorias com baixa resolução para revisar perguntas e soluções.</li><li>Valide recorrências com o setor antes de concluir que a causa está na pessoa ou equipamento.</li></ul></section>
 {% endblock %}

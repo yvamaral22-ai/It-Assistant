@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Acesso administrativo · IT Self-Service Assistant{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <form class="panel auth-card" method="post" action="/admin/login">
+    <img src="{{ url_for('static', path='img/xcmg-mark.svg') }}" alt="" class="auth-mark">
+    <span class="eyebrow">ÁREA RESTRITA</span><h1>Acesso administrativo</h1>
+    <p>Entre para alterar configurações e fluxos de diagnóstico.</p>
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <label>Usuário<input name="username" required maxlength="80" autocomplete="username" autofocus></label>
+    <label>Senha<input type="password" name="password" required maxlength="256" autocomplete="current-password"></label>
+    <button class="primary" type="submit">Entrar no painel</button>
+    <a href="/" class="auth-back">Voltar ao assistente</a>
+  </form>
+</section>
+{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', path='css/control.css') }}">{% endblock %}

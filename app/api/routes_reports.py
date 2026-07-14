@@ -10,6 +10,7 @@ from app.config import BASE_DIR
 from app.database import get_db
 from app.repositories.knowledge_repository import KnowledgeRepository
 from app.services.report_service import ReportFilters, ReportService
+from app.services.access_control import authorized_user, redirect_to_login
 
 router = APIRouter(prefix="/admin/reports", tags=["reports"])
 templates = Jinja2Templates(directory=BASE_DIR / "app" / "templates")
@@ -36,10 +37,15 @@ def reports_page(
     filters: ReportFilters = Depends(report_filters),
     db: Session = Depends(get_db),
 ):
+    if not authorized_user(request, db, "reports.read"):
+        return redirect_to_login(request)
     report = ReportService(db).build(filters)
     max_values = {
         key: max((item["count"] for item in report[key]), default=1)
-        for key in ("categories", "problems", "people", "machines", "departments", "trend")
+        for key in (
+            "categories", "problems", "solutions", "people", "machines", "assets",
+            "departments", "locations", "issue_types", "attempts", "trend",
+        )
     }
     return templates.TemplateResponse(request, "reports.html", {
         "report": report,
@@ -51,9 +57,12 @@ def reports_page(
 
 @router.get("/export.csv")
 def export_reports(
+    request: Request,
     filters: ReportFilters = Depends(report_filters),
     db: Session = Depends(get_db),
 ):
+    if not authorized_user(request, db, "reports.export"):
+        return redirect_to_login(request)
     content = ReportService(db).export_csv(filters)
     return Response(
         content=content,

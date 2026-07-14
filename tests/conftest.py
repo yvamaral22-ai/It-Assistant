@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -6,6 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
+from app.services.auth_service import AuthService
 
 
 @pytest.fixture
@@ -20,6 +23,7 @@ def client():
 
     app.dependency_overrides[get_db] = override_db
     with TestClient(app) as test_client:
+        test_client.db_factory = TestingSession
         yield test_client
     app.dependency_overrides.clear()
 
@@ -28,3 +32,19 @@ def client():
 def session_payload():
     return {"user_name": "Usuário Teste", "department": "TI", "computer_name": "PC-01", "category": "excel", "initial_description": "Excel não abre"}
 
+
+@pytest.fixture
+def authenticated_client(client):
+    password = "A-strong-local-password-2026"
+    with client.db_factory() as db:
+        AuthService(db).create_or_reset_master("master", password)
+    page = client.get("/admin/login")
+    match = re.search(r'name="csrf" value="([^"]+)"', page.text)
+    assert match
+    response = client.post(
+        "/admin/login",
+        data={"username": "master", "password": password, "csrf": match.group(1)},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    return client

@@ -16,3 +16,8 @@ class FinishRequest(BaseModel):
 class SolutionResultRequest(BaseModel):
     result: Literal["resolved", "unresolved", "not_tested"]
     feedback: str | None = Field(None, max_length=1000)
+
+
+class FeedbackRequest(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    feedback: str | None = Field(None, max_length=1000)

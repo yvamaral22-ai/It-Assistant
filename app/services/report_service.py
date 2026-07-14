@@ -54,6 +54,7 @@ class ReportService:
         total = totals[0] or 0
         resolved = totals[1] or 0
         completed = resolved + (totals[2] or 0)
+        operational = self._operational_metrics(conditions)
         report = {
             "totals": {
                 "total": total,
@@ -62,16 +63,59 @@ class ReportService:
                 "in_progress": totals[3] or 0,
                 "abandoned": totals[4] or 0,
                 "resolution_rate": round(resolved * 100 / completed, 1) if completed else 0,
+                "average_rating": self.db.scalar(
+                    select(func.avg(SupportSession.rating)).where(*conditions, SupportSession.rating.is_not(None))
+                ) or 0,
+                "feedback_count": self.db.scalar(
+                    select(func.count(SupportSession.rating)).where(*conditions, SupportSession.rating.is_not(None))
+                ) or 0,
+                "average_resolution_minutes": operational["average_resolution_minutes"],
             },
             "categories": self._ranking(SupportSession.category, conditions),
             "people": self._ranking(SupportSession.user_name, conditions, exclude_empty=True),
             "machines": self._ranking(SupportSession.computer_name, conditions, exclude_empty=True),
             "departments": self._ranking(SupportSession.department, conditions, exclude_empty=True),
+            "locations": self._ranking(SupportSession.location, conditions, exclude_empty=True),
+            "assets": self._ranking(SupportSession.asset_tag, conditions, exclude_empty=True),
+            "issue_types": self._ranking(SupportSession.issue_type, conditions, exclude_empty=True),
             "problems": self._problem_ranking(conditions),
+            "solutions": self._solution_effectiveness(conditions),
+            "attempts": operational["attempts"],
             "trend": self._trend(conditions),
         }
         report["insights"] = self._insights(report)
         return report
+
+    def _operational_metrics(self, conditions: list) -> dict:
+        completed_rows = self.db.execute(
+            select(SupportSession.started_at, SupportSession.finished_at)
+            .where(*conditions, SupportSession.finished_at.is_not(None))
+        )
+        durations = [
+            (row.finished_at - row.started_at).total_seconds() / 60
+            for row in completed_rows
+            if row.finished_at and row.started_at
+        ]
+        solution_rows = self.db.execute(
+            select(Interaction.session_id, Interaction.solution_result)
+            .join(SupportSession, SupportSession.id == Interaction.session_id)
+            .where(Interaction.node_type == "solution", *conditions)
+            .order_by(Interaction.session_id, Interaction.id)
+        )
+        positions: dict[str, int] = {}
+        resolved_attempts: dict[int, int] = {}
+        for row in solution_rows:
+            positions[row.session_id] = positions.get(row.session_id, 0) + 1
+            if row.solution_result == "resolved":
+                attempt = positions[row.session_id]
+                resolved_attempts[attempt] = resolved_attempts.get(attempt, 0) + 1
+        return {
+            "average_resolution_minutes": round(sum(durations) / len(durations), 1) if durations else 0,
+            "attempts": [
+                {"name": f"Tentativa {attempt}", "count": count}
+                for attempt, count in sorted(resolved_attempts.items())
+            ],
+        }
 
     @staticmethod
     def _insights(report: dict) -> list[dict]:
@@ -106,6 +150,20 @@ class ReportService:
                 "title": "Fluxo com baixa resolução",
                 "text": f"{weak_category['name'].title()} resolve {weak_category['resolution_rate']}% dos casos; revise perguntas e orientações.",
             })
+        weak_solution = next(
+            (
+                item
+                for item in sorted(report["solutions"], key=lambda value: value["resolution_rate"])
+                if item["count"] >= 2 and item["resolution_rate"] < 50
+            ),
+            None,
+        )
+        if weak_solution:
+            insights.append({
+                "level": "danger",
+                "title": "Orientação pouco efetiva",
+                "text": f"“{weak_solution['name']}” resolveu apenas {weak_solution['resolution_rate']}% das avaliações.",
+            })
         if totals["total"] and totals["abandoned"] / totals["total"] >= 0.2:
             insights.append({
                 "level": "warning",
@@ -136,6 +194,30 @@ class ReportService:
         if exclude_empty:
             query = query.where(field.is_not(None), func.trim(field) != "")
         return [self._rank_item(row.name, row.count, row.resolved or 0) for row in self.db.execute(query)]
+
+    def _solution_effectiveness(self, conditions: list) -> list[dict]:
+        query = (
+            select(
+                Interaction.node_id,
+                Interaction.displayed_solution,
+                func.count(Interaction.id).label("count"),
+                func.sum(case((Interaction.solution_result == "resolved", 1), else_=0)).label("resolved"),
+            )
+            .join(SupportSession, SupportSession.id == Interaction.session_id)
+            .where(
+                Interaction.node_type == "solution",
+                Interaction.solution_result.in_(("resolved", "unresolved")),
+                *conditions,
+            )
+            .group_by(Interaction.node_id, Interaction.displayed_solution)
+            .order_by(func.count(Interaction.id).desc())
+            .limit(15)
+        )
+        items = []
+        for row in self.db.execute(query):
+            title = (row.displayed_solution or row.node_id).splitlines()[0]
+            items.append(self._rank_item(title, row.count, row.resolved or 0))
+        return items
 
     def _problem_ranking(self, conditions: list) -> list[dict]:
         first_answer = (
@@ -194,13 +276,17 @@ class ReportService:
         output = io.StringIO()
         writer = csv.writer(output, delimiter=";")
         writer.writerow([
-            "ID", "Usuário", "Setor", "Computador", "Categoria", "Status",
+            "ID", "Usuário", "Setor", "Localidade", "Computador", "Patrimônio", "Modelo",
+            "Categoria", "Tipo do problema", "Urgência", "Impacto", "Status", "Avaliação",
             "Problema informado", "Início", "Término",
         ])
         for item in sessions:
             writer.writerow([
                 item.id, self._csv_safe(item.user_name), self._csv_safe(item.department),
-                self._csv_safe(item.computer_name), item.category, item.status,
+                self._csv_safe(item.location), self._csv_safe(item.computer_name),
+                self._csv_safe(item.asset_tag), self._csv_safe(item.device_model), item.category,
+                self._csv_safe(item.issue_type), item.urgency or "", item.impact or "", item.status,
+                item.rating or "",
                 self._csv_safe(item.initial_description), item.started_at.isoformat(),
                 item.finished_at.isoformat() if item.finished_at else "",
             ])

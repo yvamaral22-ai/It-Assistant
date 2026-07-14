@@ -5,5 +5,11 @@ __pycache__/
 .env
 data/*.db
 data/*.db-*
+data/.session_secret
+data/backups/
+data/logs/
+data/screenshots/
+data/*.log
+app/knowledge_base/*.bak
+app/knowledge_base/*.tmp
 !data/.gitkeep
-

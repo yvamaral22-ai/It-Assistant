@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <rewrite><rules><rule name="ReverseProxy" stopProcessing="true"><match url="(.*)"/><action type="Rewrite" url="http://127.0.0.1:8000/{R:1}"/></rule></rules></rewrite>
+    <security><requestFiltering><requestLimits maxAllowedContentLength="1048576"/></requestFiltering></security>
+    <httpProtocol><customHeaders><add name="X-Content-Type-Options" value="nosniff"/><add name="Referrer-Policy" value="same-origin"/></customHeaders></httpProtocol>
+  </system.webServer>
+</configuration>
