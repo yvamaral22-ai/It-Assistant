@@ -1,0 +1,10 @@
+{"categories":[
+  {"slug":"excel","name":"Excel","icon":"▦","description":"Arquivos, travamentos e abertura"},
+  {"slug":"outlook","name":"Outlook","icon":"✉","description":"Abertura, envio e perfil"},
+  {"slug":"navegador","name":"Navegador","icon":"◎","description":"Sites, cache e proxy"},
+  {"slug":"impressora","name":"Impressora","icon":"▣","description":"Offline, fila e impressão"},
+  {"slug":"windows","name":"Windows","icon":"⊞","description":"Lentidão e aplicativos"},
+  {"slug":"rede","name":"Rede","icon":"⌁","description":"Internet e recursos internos"},
+  {"slug":"outro","name":"Outro","icon":"?","description":"Outros problemas de TI"}
+]}
+

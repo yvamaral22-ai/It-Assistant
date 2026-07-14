@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}Início · IT Self-Service Assistant{% endblock %}
+{% block content %}
+<section class="hero"><div><span class="eyebrow">SUPORTE GUIADO</span><h1>Vamos tentar resolver seu problema antes de abrir um chamado.</h1><p>Responda a algumas perguntas simples. Ao final, você terá uma orientação segura ou um resumo pronto para enviar ao suporte.</p></div><div class="shield">✓<small>Seguro e local</small></div></section>
+<form id="start-form" class="panel">
+  <h2>Identificação <small>Campos opcionais</small></h2>
+  <div class="grid"><label>Seu nome<input name="user_name" maxlength="120" autocomplete="name"></label><label>Setor<input name="department" maxlength="120"></label><label>Nome do computador<input name="computer_name" maxlength="120"></label></div>
+  <label>Descreva brevemente o problema<textarea name="initial_description" maxlength="1000" rows="3" placeholder="Ex.: O Excel fecha ao abrir uma planilha."></textarea></label>
+  <fieldset><legend>O que está com problema?</legend><div class="categories">
+  {% for item in categories %}<label class="category"><input type="radio" name="category" value="{{ item.slug }}" required><span class="icon">{{ item.icon }}</span><strong>{{ item.name }}</strong><small>{{ item.description }}</small></label>{% else %}<p class="error">As categorias estão indisponíveis. Tente novamente mais tarde.</p>{% endfor %}
+  </div></fieldset><p id="form-error" class="error" role="alert"></p><button class="primary" type="submit">Iniciar diagnóstico →</button>
+</form>
+{% endblock %}
+

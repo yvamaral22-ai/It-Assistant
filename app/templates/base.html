@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}IT Self-Service Assistant{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body>
+  <header class="topbar"><a href="/" class="brand">IT <span>Self-Service</span> Assistant</a><a href="/admin/sessions">Histórico</a></header>
+  <main class="container">{% block content %}{% endblock %}</main>
+  <footer>Autoatendimento local de TI · Não informe senhas ou dados sensíveis.</footer>
+  <script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
+

@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Resumo do atendimento{% endblock %}{% block content %}
+{% if admin %}<div class="warning"><strong>Painel sem autenticação.</strong> Uso exclusivo em ambiente local de desenvolvimento.</div>{% endif %}
+<section class="panel"><span class="eyebrow">RESUMO PARA CHAMADO</span><h1>Atendimento {{ session.id[:8] }}…</h1><pre id="summary-text">{{ summary }}</pre><button class="primary" data-copy-target="summary-text">Copiar resumo</button></section>{% endblock %}
+
