@@ -25,6 +25,22 @@ def test_completed_service_has_redirect_to_home_action():
     assert "location.href='/'" in javascript
 
 
+def test_abandonment_always_redirects_to_home(client, session_payload):
+    session_id = client.post("/api/sessions", json=session_payload).json()["session"]["id"]
+    response = client.post(
+        f"/api/sessions/{session_id}/finish",
+        json={"status": "abandoned"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "abandoned"
+
+    javascript = (BASE_DIR / "app" / "static" / "js" / "app.js").read_text(encoding="utf-8")
+    abandon_handler = javascript.split("document.querySelector('#leave-link').onclick", 1)[1]
+    assert "finally" in abandon_handler
+    assert "sessionStorage.removeItem('it-session-id')" in abandon_handler
+    assert "window.location.replace('/')" in abandon_handler
+
+
 def test_rejects_session_with_missing_or_blank_required_fields(client, session_payload):
     for field_name in (
         "user_name", "department", "location", "computer_name",

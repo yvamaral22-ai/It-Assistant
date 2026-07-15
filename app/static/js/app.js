@@ -71,7 +71,18 @@ if (root) {
     } catch(exc){error.textContent=exc.message;}
   });
   document.querySelector('#back-button').onclick=async()=>{try{const previous=await api(`/api/sessions/${sessionId}/back`,{method:'POST'});canGoBack=previous.can_go_back;error.textContent='';render(previous.node,previous.node_id);}catch(exc){error.textContent=exc.message;}};
-  document.querySelector('#leave-link').onclick=async event=>{event.preventDefault();if(!confirm('Deseja abandonar este diagnóstico?'))return;try{await api(`/api/sessions/${sessionId}/finish`,{method:'POST',body:JSON.stringify({status:'abandoned'})});sessionStorage.removeItem('it-session-id');location.href='/';}catch(exc){error.textContent=exc.message;}};
+  document.querySelector('#leave-link').onclick=async event=>{
+    event.preventDefault();
+    if(!confirm('Deseja abandonar este diagnóstico?'))return;
+    try {
+      await api(`/api/sessions/${sessionId}/finish`,{method:'POST',body:JSON.stringify({status:'abandoned'})});
+    } catch(exc) {
+      console.warn('Não foi possível registrar o abandono do diagnóstico.', exc);
+    } finally {
+      sessionStorage.removeItem('it-session-id');
+      window.location.replace('/');
+    }
+  };
   if(!sessionId){card.innerHTML='<p class="error">Sessão não encontrada. Volte ao início.</p>';} else api(`/api/sessions/${sessionId}`).then(r=>{canGoBack=r.can_go_back;render(r.node,r.session.current_node_id)}).catch(exc=>error.textContent=exc.message);
 }
 
