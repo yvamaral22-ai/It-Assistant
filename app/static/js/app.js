@@ -105,9 +105,10 @@ const initBrandScrollTrigger = () => {
     currentProgress += (targetProgress - currentProgress) * 0.18;
 
     const horizontalTravel = Math.min(118, window.innerWidth * 0.075);
-    brand.style.setProperty('--brand-shift-x', `${(currentProgress * horizontalTravel).toFixed(2)}px`);
-    brand.style.setProperty('--brand-rotate-y', `${(-currentProgress * 22).toFixed(2)}deg`);
-    brand.style.setProperty('--brand-rotate-z', `${(currentProgress * 1.4).toFixed(2)}deg`);
+    brand.style.setProperty('--logo-rotate-y', `${(currentProgress * 360).toFixed(2)}deg`);
+    brand.style.setProperty('--text-shift-x', `${(currentProgress * horizontalTravel).toFixed(2)}px`);
+    brand.style.setProperty('--text-rotate-y', `${(-currentProgress * 18).toFixed(2)}deg`);
+    brand.style.setProperty('--text-rotate-z', `${(currentProgress * 1.2).toFixed(2)}deg`);
 
     if (Math.abs(targetProgress - currentProgress) > 0.001) frame = requestAnimationFrame(render);
   };

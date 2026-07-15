@@ -20,27 +20,43 @@
 .topbar nav { position: relative; z-index: 3; display: flex; gap: 22px; }
 .topbar nav a:hover { color: var(--blue); }
 .brand {
-  --brand-shift-x: 0px;
-  --brand-rotate-y: 0deg;
-  --brand-rotate-z: 0deg;
+  --logo-rotate-y: 0deg;
+  --text-shift-x: 0px;
+  --text-rotate-y: 0deg;
+  --text-rotate-z: 0deg;
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
   gap: 22px;
   font-size: 18px;
-  transform: translate3d(var(--brand-shift-x), 0, 0) rotateY(var(--brand-rotate-y)) rotateZ(var(--brand-rotate-z));
+  transform-style: preserve-3d;
+}
+.brand img {
+  display: block;
+  width: 145px;
+  height: auto;
+  transform: translateZ(22px) rotateY(var(--logo-rotate-y));
+  transform-origin: center;
+  transform-style: preserve-3d;
+}
+.brand span {
+  display: block;
+  padding-left: 22px;
+  color: var(--navy);
+  border-left: 1px solid var(--line);
+  transform: translate3d(var(--text-shift-x), 0, 8px) rotateY(var(--text-rotate-y)) rotateZ(var(--text-rotate-z));
   transform-origin: left center;
   transform-style: preserve-3d;
 }
-.topbar[data-scroll-3d="active"] .brand { will-change: transform; }
-.brand img { display: block; width: 145px; height: auto; transform: translateZ(22px); }
-.brand span { padding-left: 22px; color: var(--navy); border-left: 1px solid var(--line); transform: translateZ(8px); }
+.topbar[data-scroll-3d="active"] .brand img,
+.topbar[data-scroll-3d="active"] .brand span { will-change: transform; }
 .admin-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .admin-title .primary { text-decoration: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .brand { transform: none !important; }
+  .brand img,
+  .brand span { transform: none !important; }
 }
 
 @media (max-width: 560px) {
