@@ -87,3 +87,38 @@ if (root) {
 }
 
 function bindCopy(){document.querySelectorAll('[data-copy-target]').forEach(button=>button.onclick=async()=>{await navigator.clipboard.writeText(document.getElementById(button.dataset.copyTarget).textContent);button.textContent='Resumo copiado!';});} bindCopy();
+
+const initBrandScrollTrigger = () => {
+  const topbar = document.querySelector('.topbar');
+  const brand = topbar?.querySelector('.brand');
+  const motionAllowed = window.matchMedia('(min-width: 700px) and (prefers-reduced-motion: no-preference)');
+  if (!topbar || !brand || !motionAllowed.matches) return;
+
+  topbar.dataset.scroll3d = 'active';
+  let frame = 0;
+  let currentProgress = 0;
+
+  const render = () => {
+    frame = 0;
+    const triggerDistance = Math.max(360, Math.min(window.innerHeight * 0.75, 620));
+    const targetProgress = Math.min(1, Math.max(0, window.scrollY / triggerDistance));
+    currentProgress += (targetProgress - currentProgress) * 0.18;
+
+    const horizontalTravel = Math.min(118, window.innerWidth * 0.075);
+    brand.style.setProperty('--brand-shift-x', `${(currentProgress * horizontalTravel).toFixed(2)}px`);
+    brand.style.setProperty('--brand-rotate-y', `${(-currentProgress * 22).toFixed(2)}deg`);
+    brand.style.setProperty('--brand-rotate-z', `${(currentProgress * 1.4).toFixed(2)}deg`);
+
+    if (Math.abs(targetProgress - currentProgress) > 0.001) frame = requestAnimationFrame(render);
+  };
+
+  const requestRender = () => {
+    if (!frame) frame = requestAnimationFrame(render);
+  };
+
+  window.addEventListener('scroll', requestRender, {passive: true});
+  window.addEventListener('resize', requestRender, {passive: true});
+  requestRender();
+};
+
+initBrandScrollTrigger();

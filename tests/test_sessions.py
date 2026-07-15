@@ -41,6 +41,20 @@ def test_abandonment_always_redirects_to_home(client, session_payload):
     assert "window.location.replace('/')" in abandon_handler
 
 
+def test_header_has_local_3d_scroll_trigger_and_static_navigation(client):
+    page = client.get("/")
+    assert page.status_code == 200
+    assert 'class="topbar"' in page.text
+    assert '<nav>' in page.text
+    assert "app.js?v=20260715-3" in page.text
+
+    javascript = (BASE_DIR / "app" / "static" / "js" / "app.js").read_text(encoding="utf-8")
+    assert "initBrandScrollTrigger" in javascript
+    assert "requestAnimationFrame" in javascript
+    assert "--brand-shift-x" in javascript
+    assert "querySelector('.brand')" in javascript
+
+
 def test_rejects_session_with_missing_or_blank_required_fields(client, session_payload):
     for field_name in (
         "user_name", "department", "location", "computer_name",

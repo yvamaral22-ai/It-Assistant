@@ -1,6 +1,9 @@
 :root { --blue: #0868b9; }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   height: auto;
   min-height: 88px;
   padding-top: 8px;
@@ -8,16 +11,37 @@
   color: var(--navy);
   background: #fff;
   border-bottom: 1px solid var(--line);
+  overflow: clip;
+  perspective: 1100px;
+  isolation: isolate;
 }
 
 .topbar a { color: var(--navy); }
-.topbar nav { display: flex; gap: 22px; }
+.topbar nav { position: relative; z-index: 3; display: flex; gap: 22px; }
 .topbar nav a:hover { color: var(--blue); }
-.brand { display: flex; align-items: center; gap: 22px; font-size: 18px; }
-.brand img { display: block; width: 145px; height: auto; }
-.brand span { padding-left: 22px; color: var(--navy); border-left: 1px solid var(--line); }
+.brand {
+  --brand-shift-x: 0px;
+  --brand-rotate-y: 0deg;
+  --brand-rotate-z: 0deg;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  font-size: 18px;
+  transform: translate3d(var(--brand-shift-x), 0, 0) rotateY(var(--brand-rotate-y)) rotateZ(var(--brand-rotate-z));
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+.topbar[data-scroll-3d="active"] .brand { will-change: transform; }
+.brand img { display: block; width: 145px; height: auto; transform: translateZ(22px); }
+.brand span { padding-left: 22px; color: var(--navy); border-left: 1px solid var(--line); transform: translateZ(8px); }
 .admin-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .admin-title .primary { text-decoration: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .brand { transform: none !important; }
+}
 
 @media (max-width: 560px) {
   .brand { gap: 12px; }
