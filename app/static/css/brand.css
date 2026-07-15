@@ -20,7 +20,6 @@
 .topbar nav { position: relative; z-index: 3; display: flex; gap: 22px; }
 .topbar nav a:hover { color: var(--blue); }
 .brand {
-  --logo-rotate-y: 0deg;
   --text-shift-x: 0px;
   --text-rotate-y: 0deg;
   --text-rotate-z: 0deg;
@@ -36,9 +35,10 @@
   display: block;
   width: 145px;
   height: auto;
-  transform: translateZ(22px) rotateY(var(--logo-rotate-y));
+  transform: translateZ(22px) rotateY(0deg);
   transform-origin: center;
   transform-style: preserve-3d;
+  backface-visibility: visible;
 }
 .brand span {
   display: block;
@@ -49,14 +49,22 @@
   transform-origin: left center;
   transform-style: preserve-3d;
 }
-.topbar[data-scroll-3d="active"] .brand img,
-.topbar[data-scroll-3d="active"] .brand span { will-change: transform; }
+.topbar[data-scroll3d="active"] .brand img,
+.topbar[data-scroll3d="active"] .brand span { will-change: transform; }
+.topbar[data-scroll3d="active"] .brand img {
+  animation: logo-horizontal-spin 5s linear infinite;
+}
 .admin-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .admin-title .primary { text-decoration: none; }
 
+@keyframes logo-horizontal-spin {
+  from { transform: translateZ(22px) rotateY(0deg); }
+  to { transform: translateZ(22px) rotateY(360deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .brand img,
-  .brand span { transform: none !important; }
+  .brand span { animation: none !important; transform: none !important; }
 }
 
 @media (max-width: 560px) {

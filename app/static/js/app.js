@@ -95,31 +95,20 @@ const initBrandScrollTrigger = () => {
   if (!topbar || !brand || !motionAllowed.matches) return;
 
   topbar.dataset.scroll3d = 'active';
-  let frame = 0;
-  let currentProgress = 0;
 
   const render = () => {
-    frame = 0;
     const triggerDistance = Math.max(360, Math.min(window.innerHeight * 0.75, 620));
-    const targetProgress = Math.min(1, Math.max(0, window.scrollY / triggerDistance));
-    currentProgress += (targetProgress - currentProgress) * 0.18;
+    const progress = Math.min(1, Math.max(0, window.scrollY / triggerDistance));
 
     const horizontalTravel = Math.min(118, window.innerWidth * 0.075);
-    brand.style.setProperty('--logo-rotate-y', `${(currentProgress * 360).toFixed(2)}deg`);
-    brand.style.setProperty('--text-shift-x', `${(currentProgress * horizontalTravel).toFixed(2)}px`);
-    brand.style.setProperty('--text-rotate-y', `${(-currentProgress * 18).toFixed(2)}deg`);
-    brand.style.setProperty('--text-rotate-z', `${(currentProgress * 1.2).toFixed(2)}deg`);
-
-    if (Math.abs(targetProgress - currentProgress) > 0.001) frame = requestAnimationFrame(render);
+    brand.style.setProperty('--text-shift-x', `${(progress * horizontalTravel).toFixed(2)}px`);
+    brand.style.setProperty('--text-rotate-y', `${(-progress * 18).toFixed(2)}deg`);
+    brand.style.setProperty('--text-rotate-z', `${(progress * 1.2).toFixed(2)}deg`);
   };
 
-  const requestRender = () => {
-    if (!frame) frame = requestAnimationFrame(render);
-  };
-
-  window.addEventListener('scroll', requestRender, {passive: true});
-  window.addEventListener('resize', requestRender, {passive: true});
-  requestRender();
+  window.addEventListener('scroll', render, {passive: true});
+  window.addEventListener('resize', render, {passive: true});
+  render();
 };
 
 initBrandScrollTrigger();

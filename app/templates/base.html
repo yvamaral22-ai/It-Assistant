@@ -5,7 +5,7 @@
   <title>{% block title %}IT Self-Service Assistant{% endblock %}</title>
   <link rel="icon" href="{{ url_for('static', path='img/xcmg-mark.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/brand.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/brand.css') }}?v=20260715-7">
   <link rel="stylesheet" href="{{ url_for('static', path='css/control-extra.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/ux.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/history.css') }}">
@@ -16,7 +16,7 @@
   <header class="topbar"><a href="/" class="brand"><img src="{{ url_for('static', path='img/xcmg-logo.svg') }}" alt="XCMG"><span>IT Self-Service Assistant</span></a><nav>{% set role = request.session.get('role') %}{% if role in ['master','analyst','reader'] %}<a href="/admin/sessions">Histórico</a><a href="/admin/reports">Relatórios</a>{% endif %}{% if role %}<a href="/admin/control">Controle</a>{% else %}<a href="/admin/login">Entrar</a>{% endif %}</nav></header>
   <main class="container">{% block content %}{% endblock %}</main>
   <footer>Autoatendimento local de TI · Não informe senhas ou dados sensíveis.</footer>
-  <script src="{{ url_for('static', path='js/app.js') }}?v=20260715-4" defer></script>
+  <script src="{{ url_for('static', path='js/app.js') }}?v=20260715-7" defer></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

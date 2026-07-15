@@ -46,14 +46,18 @@ def test_header_has_local_3d_scroll_trigger_and_static_navigation(client):
     assert page.status_code == 200
     assert 'class="topbar"' in page.text
     assert '<nav>' in page.text
-    assert "app.js?v=20260715-4" in page.text
+    assert "brand.css?v=20260715-7" in page.text
+    assert "app.js?v=20260715-7" in page.text
 
     javascript = (BASE_DIR / "app" / "static" / "js" / "app.js").read_text(encoding="utf-8")
     assert "initBrandScrollTrigger" in javascript
-    assert "requestAnimationFrame" in javascript
-    assert "--logo-rotate-y" in javascript
     assert "--text-shift-x" in javascript
     assert "querySelector('.brand')" in javascript
+
+    stylesheet = (BASE_DIR / "app" / "static" / "css" / "brand.css").read_text(encoding="utf-8")
+    assert '[data-scroll3d="active"]' in stylesheet
+    assert "@keyframes logo-horizontal-spin" in stylesheet
+    assert "animation: logo-horizontal-spin" in stylesheet
 
 
 def test_rejects_session_with_missing_or_blank_required_fields(client, session_payload):
