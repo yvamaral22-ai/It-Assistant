@@ -30,7 +30,15 @@ def client():
 
 @pytest.fixture
 def session_payload():
-    return {"user_name": "Usuário Teste", "department": "TI", "computer_name": "PC-01", "category": "excel", "initial_description": "Excel não abre"}
+    return {
+        "user_name": "Usuário Teste",
+        "department": "TI",
+        "location": "Matriz",
+        "computer_name": "PC-01",
+        "issue_type": "Falha ao iniciar",
+        "category": "excel",
+        "initial_description": "Excel não abre",
+    }
 
 
 @pytest.fixture

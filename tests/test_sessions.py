@@ -1,3 +1,43 @@
+from app.config import BASE_DIR
+
+
+def test_home_omits_removed_identification_fields(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    for field_name in ("asset_tag", "device_model", "urgency", "impact"):
+        assert f'name="{field_name}"' not in response.text
+
+
+def test_home_requires_all_visible_fields(client):
+    response = client.get("/")
+    for field_name in (
+        "user_name", "department", "location", "computer_name",
+        "issue_type", "initial_description", "category",
+    ):
+        assert f'name="{field_name}"' in response.text
+    assert response.text.count(" required") >= 7
+
+
+def test_completed_service_has_redirect_to_home_action():
+    javascript = (BASE_DIR / "app" / "static" / "js" / "app.js").read_text(encoding="utf-8")
+    assert 'id="close-service"' in javascript
+    assert "document.querySelector('#close-service').onclick" in javascript
+    assert "location.href='/'" in javascript
+
+
+def test_rejects_session_with_missing_or_blank_required_fields(client, session_payload):
+    for field_name in (
+        "user_name", "department", "location", "computer_name",
+        "issue_type", "initial_description",
+    ):
+        missing = {**session_payload}
+        missing.pop(field_name)
+        assert client.post("/api/sessions", json=missing).status_code == 422
+
+        blank = {**session_payload, field_name: "   "}
+        assert client.post("/api/sessions", json=blank).status_code == 422
+
+
 def test_create_and_read_session(client, session_payload):
     created = client.post("/api/sessions", json=session_payload)
     assert created.status_code == 201
@@ -24,6 +64,10 @@ def test_finish_resolved_and_summary(client, session_payload):
     assert response.json()["status"] == "resolved"
     summary = client.get(f"/api/sessions/{session_id}/summary").json()["summary"]
     assert "RESUMO DO ATENDIMENTO" in summary and "Resolvido" in summary
+    assert "Patrimônio:" not in summary
+    assert "Modelo:" not in summary
+    assert "Urgência:" not in summary
+    assert "Impacto:" not in summary
 
 
 def test_finish_unresolved(client, session_payload):

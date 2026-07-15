@@ -54,7 +54,7 @@
   {{ ranking('Máquinas com mais ocorrências', 'Indica equipamentos que podem precisar de análise preventiva.', report.machines, max_values.machines) }}
   {{ ranking('Setores com maior demanda', 'Distribuição do volume por área informada.', report.departments, max_values.departments) }}
 </section>
-<section class="report-grid three-columns">{{ ranking('Patrimônios reincidentes', 'Equipamentos identificados com mais ocorrências.', report.assets, max_values.assets) }}{{ ranking('Localidades', 'Distribuição dos atendimentos por local.', report.locations, max_values.locations) }}{{ ranking('Setores', 'Demanda por área informada.', report.departments, max_values.departments) }}</section>
+<section class="report-grid">{{ ranking('Localidades', 'Distribuição dos atendimentos por local.', report.locations, max_values.locations) }}{{ ranking('Setores', 'Demanda por área informada.', report.departments, max_values.departments) }}</section>
 
 <section class="insight panel"><span class="eyebrow">COMO USAR ESTES DADOS</span><h2>Ações sugeridas</h2><ul><li>Transforme problemas recorrentes e bem resolvidos em novos artigos de autoatendimento.</li><li>Investigue máquinas com volume repetido antes que gerem indisponibilidade.</li><li>Use categorias com baixa resolução para revisar perguntas e soluções.</li><li>Valide recorrências com o setor antes de concluir que a causa está na pessoa ou equipamento.</li></ul></section>
 {% endblock %}

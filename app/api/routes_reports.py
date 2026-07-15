@@ -43,7 +43,7 @@ def reports_page(
     max_values = {
         key: max((item["count"] for item in report[key]), default=1)
         for key in (
-            "categories", "problems", "solutions", "people", "machines", "assets",
+            "categories", "problems", "solutions", "people", "machines",
             "departments", "locations", "issue_types", "attempts", "trend",
         )
     }

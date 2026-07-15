@@ -5,17 +5,19 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class SessionCreate(BaseModel):
-    user_name: str | None = Field(None, max_length=120)
-    department: str | None = Field(None, max_length=120)
-    computer_name: str | None = Field(None, max_length=120)
-    location: str | None = Field(None, max_length=120)
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    user_name: str = Field(min_length=1, max_length=120)
+    department: str = Field(min_length=1, max_length=120)
+    computer_name: str = Field(min_length=1, max_length=120)
+    location: str = Field(min_length=1, max_length=120)
     asset_tag: str | None = Field(None, max_length=80)
     device_model: str | None = Field(None, max_length=120)
     category: str = Field(min_length=1, max_length=40)
-    issue_type: str | None = Field(None, max_length=120)
+    issue_type: str = Field(min_length=1, max_length=120)
     urgency: Literal["low", "medium", "high"] | None = None
     impact: Literal["individual", "team", "company"] | None = None
-    initial_description: str | None = Field(None, max_length=1000)
+    initial_description: str = Field(min_length=1, max_length=1000)
 
 
 class SessionRead(BaseModel):

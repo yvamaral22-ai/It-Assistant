@@ -76,7 +76,6 @@ class ReportService:
             "machines": self._ranking(SupportSession.computer_name, conditions, exclude_empty=True),
             "departments": self._ranking(SupportSession.department, conditions, exclude_empty=True),
             "locations": self._ranking(SupportSession.location, conditions, exclude_empty=True),
-            "assets": self._ranking(SupportSession.asset_tag, conditions, exclude_empty=True),
             "issue_types": self._ranking(SupportSession.issue_type, conditions, exclude_empty=True),
             "problems": self._problem_ranking(conditions),
             "solutions": self._solution_effectiveness(conditions),
@@ -276,16 +275,15 @@ class ReportService:
         output = io.StringIO()
         writer = csv.writer(output, delimiter=";")
         writer.writerow([
-            "ID", "Usuário", "Setor", "Localidade", "Computador", "Patrimônio", "Modelo",
-            "Categoria", "Tipo do problema", "Urgência", "Impacto", "Status", "Avaliação",
+            "ID", "Usuário", "Setor", "Localidade", "Computador",
+            "Categoria", "Tipo do problema", "Status", "Avaliação",
             "Problema informado", "Início", "Término",
         ])
         for item in sessions:
             writer.writerow([
                 item.id, self._csv_safe(item.user_name), self._csv_safe(item.department),
-                self._csv_safe(item.location), self._csv_safe(item.computer_name),
-                self._csv_safe(item.asset_tag), self._csv_safe(item.device_model), item.category,
-                self._csv_safe(item.issue_type), item.urgency or "", item.impact or "", item.status,
+                self._csv_safe(item.location), self._csv_safe(item.computer_name), item.category,
+                self._csv_safe(item.issue_type), item.status,
                 item.rating or "",
                 self._csv_safe(item.initial_description), item.started_at.isoformat(),
                 item.finished_at.isoformat() if item.finished_at else "",

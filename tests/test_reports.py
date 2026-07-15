@@ -43,6 +43,11 @@ def test_reports_csv_export_and_formula_protection(authenticated_client, session
     assert response.status_code == 200
     assert "text/csv" in response.headers["content-type"]
     assert "'=DANGEROUS()" in response.text
+    header = response.text.splitlines()[0]
+    assert "Patrimônio" not in header
+    assert "Modelo" not in header
+    assert "Urgência" not in header
+    assert "Impacto" not in header
 
 
 def test_report_category_filter(authenticated_client, session_payload):

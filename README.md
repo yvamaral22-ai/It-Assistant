@@ -7,7 +7,7 @@ Sistema interno de autoatendimento de TI. Conduz o usuário por perguntas em JSO
 - Sete categorias: Excel, Outlook, navegador, impressora, Windows, rede e outros.
 - Diagnóstico de uma pergunta por vez, retorno seguro e retomada de sessão.
 - Busca de categoria, impressão, resumo copiável e avaliação de 1 a 5.
-- Dados estruturados de localidade, patrimônio, modelo, urgência, impacto e tipo de problema.
+- Dados estruturados de localidade e tipo de problema.
 - Histórico protegido e relatórios com filtros e CSV.
 - Eficácia por solução, resolução por tentativa, tempo médio, recorrência e satisfação.
 - Papéis `master`, `analyst`, `editor` e `reader`.
