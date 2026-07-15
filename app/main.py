@@ -9,7 +9,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api import routes_control, routes_diagnostics, routes_pages, routes_reports, routes_sessions, routes_users
+from app.api import (
+    routes_control, routes_diagnostics, routes_operations, routes_pages,
+    routes_reports, routes_sessions, routes_users,
+)
 from app.config import BASE_DIR, get_session_secret, get_settings
 from app.database_migrations import run_migrations
 from app.database import engine
@@ -67,6 +70,7 @@ def create_app() -> FastAPI:
     application.include_router(routes_reports.router)
     application.include_router(routes_control.router)
     application.include_router(routes_users.router)
+    application.include_router(routes_operations.router)
 
     @application.middleware("http")
     async def maintenance_guard(request: Request, call_next):

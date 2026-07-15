@@ -146,7 +146,11 @@ def test_alembic_builds_new_database(tmp_path):
     from sqlalchemy import create_engine
 
     schema = inspect(create_engine(f"sqlite:///{database.as_posix()}"))
-    assert {"sessions", "interactions", "users", "knowledge_versions", "audit_logs"}.issubset(
+    assert {
+        "sessions", "interactions", "users", "knowledge_versions", "audit_logs",
+        "internal_notices",
+    }.issubset(
         schema.get_table_names()
     )
+    assert "service_health" not in schema.get_table_names()
     assert "rating" in {column["name"] for column in schema.get_columns("sessions")}

@@ -9,6 +9,7 @@ Sistema interno de autoatendimento de TI. Conduz o usuário por perguntas em JSO
 - Busca de categoria, impressão, resumo copiável e avaliação de 1 a 5.
 - Dados estruturados de localidade e tipo de problema.
 - Histórico protegido e relatórios com filtros e CSV.
+- Avisos internos publicados na página inicial sem interromper o autoatendimento.
 - Eficácia por solução, resolução por tentativa, tempo médio, recorrência e satisfação.
 - Papéis `master`, `analyst`, `editor` e `reader`.
 - Rascunho, publicação, comparação, restauração e auditoria dos fluxos JSON.
@@ -60,8 +61,8 @@ Os testes usam SQLite temporário e validam regras, segurança, relatórios, ver
 ## Usuários e permissões
 
 - `master`: acesso total, usuários, auditoria, conteúdo, histórico e relatórios.
-- `analyst`: histórico, relatórios e exportação.
-- `editor`: edição e versionamento da base de conhecimento.
+- `analyst`: histórico, relatórios, exportação e consulta dos avisos internos.
+- `editor`: edição da base de conhecimento e dos avisos internos.
 - `reader`: histórico e relatórios sem exportação.
 
 O master gerencia acessos em `/admin/control/users`. O último master ativo não pode ser removido. Credenciais são armazenadas somente como hash `scrypt` com salt; nunca use a senha corporativa.

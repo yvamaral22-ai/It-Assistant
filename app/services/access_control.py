@@ -7,8 +7,12 @@ from app.services.auth_service import AuthService
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "master": frozenset({"*"}),
-    "analyst": frozenset({"control.access", "sessions.read", "reports.read", "reports.export"}),
-    "editor": frozenset({"control.access", "knowledge.read", "knowledge.write"}),
+    "analyst": frozenset({
+        "control.access", "sessions.read", "reports.read", "reports.export", "notices.read",
+    }),
+    "editor": frozenset({
+        "control.access", "knowledge.read", "knowledge.write", "notices.read", "notices.write",
+    }),
     "reader": frozenset({"control.access", "sessions.read", "reports.read"}),
 }
 

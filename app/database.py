@@ -28,6 +28,8 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def initialize_database() -> None:
-    from app.models import AuditLog, Interaction, KnowledgeVersion, SupportSession, User  # noqa: F401
+    from app.models import (  # noqa: F401
+        AuditLog, Interaction, InternalNotice, KnowledgeVersion, SupportSession, User,
+    )
 
     Base.metadata.create_all(bind=engine)

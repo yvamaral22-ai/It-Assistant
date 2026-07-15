@@ -16,5 +16,5 @@ def run_migrations() -> None:
         if "users" not in tables:
             User.__table__.create(engine, checkfirst=True)
         session_columns = {column["name"] for column in inspect(engine).get_columns("sessions")}
-        command.stamp(config, "head" if "location" in session_columns else "0001_baseline")
+        command.stamp(config, "0002_operational" if "location" in session_columns else "0001_baseline")
     command.upgrade(config, "head")

@@ -11,18 +11,24 @@ from app.repositories.knowledge_repository import KnowledgeBaseError, KnowledgeR
 from app.repositories.session_repository import SessionRepository
 from app.services.summary_service import build_summary
 from app.services.access_control import authorized_user, redirect_to_login
+from app.services.operations_service import NOTICE_SEVERITIES, OperationsService
 
 router = APIRouter()
 templates = Jinja2Templates(directory=BASE_DIR / "app" / "templates")
 
 
 @router.get("/", response_class=HTMLResponse)
-def index(request: Request):
+def index(request: Request, db: Session = Depends(get_db)):
     try:
         categories = KnowledgeRepository().categories()
     except KnowledgeBaseError:
         categories = []
-    return templates.TemplateResponse(request, "index.html", {"categories": categories})
+    operations = OperationsService(db)
+    return templates.TemplateResponse(request, "index.html", {
+        "categories": categories,
+        "notices": operations.public_notices(),
+        "notice_severities": NOTICE_SEVERITIES,
+    })
 
 
 @router.get("/diagnostic/{category}", response_class=HTMLResponse)

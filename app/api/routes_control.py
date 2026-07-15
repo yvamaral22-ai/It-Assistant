@@ -137,6 +137,7 @@ def control_panel(request: Request, db: Session = Depends(get_db)):
         "categories": KnowledgeRepository().categories(),
         "csrf_token": csrf_token(request),
         "can_edit": has_permission(user, "knowledge.write"),
+        "can_manage_notices": has_permission(user, "notices.read"),
         "can_manage_users": has_permission(user, "users.manage"),
     })
 
@@ -301,6 +302,7 @@ def change_password(
         "categories": KnowledgeRepository().categories(),
         "csrf_token": csrf_token(request),
         "can_edit": has_permission(user, "knowledge.write"),
+        "can_manage_notices": has_permission(user, "notices.read"),
         "can_manage_users": has_permission(user, "users.manage"),
         **message,
     })
