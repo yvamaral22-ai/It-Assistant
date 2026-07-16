@@ -2,27 +2,31 @@
 {% block content %}
 <section class="hero"><div><span class="eyebrow">SUPORTE GUIADO</span><h1>Resolva seu problema antes de abrir um chamado.</h1><p>Responda a algumas perguntas simples. Ao final, você terá uma orientação segura ou um resumo pronto para enviar ao suporte.</p></div><div class="shield">✓<small>Seguro</small></div></section>
 {% if notices %}<section class="notice-stack" aria-label="Avisos internos">{% for item in notices %}<article class="internal-notice {{ item.severity }}"><span class="notice-symbol" aria-hidden="true">{% if item.severity == 'critical' %}!{% elif item.severity == 'warning' %}⚠{% else %}i{% endif %}</span><div><small>{{ notice_severities[item.severity] }}</small><h2>{{ item.title }}</h2><p>{{ item.message }}</p></div></article>{% endfor %}</section>{% endif %}
-{% if process_posts %}
-<section class="process-library" aria-labelledby="process-library-title">
-  <header class="process-library-heading"><div><span class="eyebrow">PROCESSOS INTERNOS</span><h2 id="process-library-title">Acessos e solicitações</h2></div><p>Consulte os requisitos antes de abrir um chamado.</p></header>
-  <div class="process-tabs">
-    <div class="process-tab-list" role="tablist" aria-label="Processos internos">
-      {% for item in process_posts %}<button type="button" role="tab" id="process-tab-{{ item.id }}" aria-controls="process-panel-{{ item.id }}" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ '0' if loop.first else '-1' }}" data-process-tab="{{ item.id }}">{{ item.title }}<span aria-hidden="true">→</span></button>{% endfor %}
+<div class="home-support-layout{% if not process_posts %} without-processes{% endif %}">
+  {% if process_posts %}
+  <aside class="process-library" aria-labelledby="process-library-title">
+    <header class="process-library-heading"><span class="eyebrow">PROCESSOS INTERNOS</span><h2 id="process-library-title">Acessos e solicitações</h2><p>Escolha um tópico e consulte os requisitos antes de abrir um chamado.</p></header>
+    <div class="process-tabs">
+      <div class="process-tab-list" role="tablist" aria-label="Processos internos" aria-orientation="vertical">
+        {% for item in process_posts %}<button type="button" role="tab" id="process-tab-{{ item.id }}" aria-controls="process-panel-{{ item.id }}" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ '0' if loop.first else '-1' }}" data-process-tab="{{ item.id }}">{{ item.title }}<span aria-hidden="true">↓</span></button>{% endfor %}
+      </div>
+      <div class="process-tab-content">
+        {% for item in process_posts %}<article role="tabpanel" id="process-panel-{{ item.id }}" aria-labelledby="process-tab-{{ item.id }}" data-process-panel="{{ item.id }}" {% if not loop.first %}hidden{% endif %}><span class="eyebrow">ORIENTAÇÃO</span><h3>{{ item.title }}</h3><div class="process-instructions">{{ item.content }}</div><p class="process-reminder"><strong>Atenção:</strong> confirme a solicitação com os responsáveis pelas aprovações. Caso o chamado permaneça mais de cinco dias sem aprovação, ele será encerrado por falta de interação.</p></article>{% endfor %}
+      </div>
     </div>
-    <div class="process-tab-content">
-      {% for item in process_posts %}<article role="tabpanel" id="process-panel-{{ item.id }}" aria-labelledby="process-tab-{{ item.id }}" data-process-panel="{{ item.id }}" {% if not loop.first %}hidden{% endif %}><span class="eyebrow">ORIENTAÇÃO</span><h3>{{ item.title }}</h3><div class="process-instructions">{{ item.content }}</div><p class="process-reminder"><strong>Importante:</strong> reúna as aprovações indicadas antes de registrar a solicitação na plataforma de chamados.</p></article>{% endfor %}
-    </div>
+  </aside>
+  {% endif %}
+  <div class="diagnostic-start">
+    <section id="resume-session" class="resume-session" hidden aria-live="polite"></section>
+    <form id="start-form" class="panel">
+      <h2>Identificação <small>Todos os campos são obrigatórios</small></h2>
+      <div class="grid"><label>Seu nome<input name="user_name" maxlength="120" autocomplete="name" required></label><label>Setor<input name="department" maxlength="120" required></label><label>Localidade<input name="location" maxlength="120" placeholder="Ex.: Matriz, filial SP" required></label><label>Nome do computador<input name="computer_name" maxlength="120" required></label><label>Tipo específico do problema<input name="issue_type" maxlength="120" placeholder="Ex.: Excel travando" required></label></div>
+      <label>Descreva brevemente o problema<textarea name="initial_description" maxlength="1000" rows="3" placeholder="Ex.: O Excel fecha ao abrir uma planilha." required></textarea></label>
+      <fieldset><legend>O que está com problema?</legend><label class="category-search">Buscar categoria<input id="category-search" type="search" placeholder="Digite Excel, rede, impressão…" autocomplete="off"></label><div class="categories">
+      {% for item in categories %}<label class="category"><input type="radio" name="category" value="{{ item.slug }}" required><span class="icon">{{ item.icon }}</span><strong>{{ item.name }}</strong><small>{{ item.description }}</small></label>{% else %}<p class="error">As categorias estão indisponíveis. Tente novamente mais tarde.</p>{% endfor %}
+      </div><p id="category-empty" class="empty-state" hidden>Nenhuma categoria corresponde à busca. Selecione “Outro” ou descreva o problema.</p></fieldset><p id="form-error" class="error" role="alert"></p><button class="primary" type="submit">Iniciar diagnóstico →</button>
+    </form>
   </div>
-</section>
-{% endif %}
-<section id="resume-session" class="resume-session" hidden aria-live="polite"></section>
-<form id="start-form" class="panel">
-  <h2>Identificação <small>Todos os campos são obrigatórios</small></h2>
-  <div class="grid"><label>Seu nome<input name="user_name" maxlength="120" autocomplete="name" required></label><label>Setor<input name="department" maxlength="120" required></label><label>Localidade<input name="location" maxlength="120" placeholder="Ex.: Matriz, filial SP" required></label><label>Nome do computador<input name="computer_name" maxlength="120" required></label><label>Tipo específico do problema<input name="issue_type" maxlength="120" placeholder="Ex.: Excel travando" required></label></div>
-  <label>Descreva brevemente o problema<textarea name="initial_description" maxlength="1000" rows="3" placeholder="Ex.: O Excel fecha ao abrir uma planilha." required></textarea></label>
-  <fieldset><legend>O que está com problema?</legend><label class="category-search">Buscar categoria<input id="category-search" type="search" placeholder="Digite Excel, rede, impressão…" autocomplete="off"></label><div class="categories">
-  {% for item in categories %}<label class="category"><input type="radio" name="category" value="{{ item.slug }}" required><span class="icon">{{ item.icon }}</span><strong>{{ item.name }}</strong><small>{{ item.description }}</small></label>{% else %}<p class="error">As categorias estão indisponíveis. Tente novamente mais tarde.</p>{% endfor %}
-  </div><p id="category-empty" class="empty-state" hidden>Nenhuma categoria corresponde à busca. Selecione “Outro” ou descreva o problema.</p></fieldset><p id="form-error" class="error" role="alert"></p><button class="primary" type="submit">Iniciar diagnóstico →</button>
-</form>
+</div>
 {% endblock %}
-{% block styles %}<link rel="stylesheet" href="{{ url_for('static', path='css/operations.css') }}?v=20260715-1"><link rel="stylesheet" href="{{ url_for('static', path='css/processes.css') }}?v=20260716-1">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', path='css/operations.css') }}?v=20260715-1"><link rel="stylesheet" href="{{ url_for('static', path='css/processes.css') }}?v=20260716-2">{% endblock %}

@@ -57,6 +57,10 @@ def test_master_can_create_update_and_delete_process_post(authenticated_client):
     assert "Acessos e solicitações" in home.text
     assert "Como solicito acesso ao WeChat?" in home.text
     assert "data-process-tab" in home.text
+    assert 'class="home-support-layout"' in home.text
+    assert '<aside class="process-library"' in home.text
+    assert 'aria-orientation="vertical"' in home.text
+    assert home.text.index('<aside class="process-library"') < home.text.index('id="start-form"')
 
     updated = client.post(
         f"/admin/control/processes/{item_id}",
@@ -104,7 +108,12 @@ def test_non_master_cannot_manage_process_posts(client):
 
 def test_process_tabs_have_keyboard_behavior():
     javascript = (BASE_DIR / "app" / "static" / "js" / "app.js").read_text(encoding="utf-8")
+    stylesheet = (BASE_DIR / "app" / "static" / "css" / "processes.css").read_text(
+        encoding="utf-8"
+    )
     assert "initProcessTabs" in javascript
     assert "ArrowDown" in javascript
     assert "aria-selected" in javascript
     assert "form[data-confirm]" in javascript
+    assert "grid-template-columns: minmax(270px, 320px) minmax(0, 1fr)" in stylesheet
+    assert "position: sticky" in stylesheet
