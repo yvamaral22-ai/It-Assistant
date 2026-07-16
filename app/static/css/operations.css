@@ -41,7 +41,18 @@
 .operations-section-heading p { margin: 4px 0 14px; color: var(--muted); }
 .operations-admin-grid { display: grid; gap: 14px; }
 .operations-item { box-shadow: none; }
-.operations-item > small { display: block; margin-top: 12px; color: var(--muted); }
+.operations-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.operations-item-footer small { color: var(--muted); }
+.operations-item-footer form { margin: 0; }
+.operations-item-footer .danger-button { margin: 0; }
 .operations-form-grid { display: grid; grid-template-columns: 1.4fr 1.4fr 1fr .55fr; gap: 12px; }
 .operations-form-grid label { min-width: 0; }
 .check-line { display: flex; grid-template-columns: none; align-items: center; gap: 8px; width: fit-content; }
@@ -56,6 +67,8 @@
 
 @media (max-width: 600px) {
   .operations-form-grid { grid-template-columns: 1fr; }
+  .operations-item-footer { align-items: stretch; flex-direction: column; }
+  .operations-item-footer .danger-button { width: 100%; }
   .internal-notice { grid-template-columns: 34px minmax(0, 1fr); padding: 15px; }
   .notice-symbol { width: 32px; height: 32px; }
 }

@@ -3,10 +3,29 @@
 {% block content %}
 <section class="control-heading"><div><a href="/admin/control" class="auth-back">← Painel de controle</a><span class="eyebrow">COMUNICAÇÃO INTERNA</span><h1>Avisos aos colaboradores</h1><p>Publique somente orientações que ajudem antes do início do diagnóstico.</p></div></section>
 {% if error %}<div class="error-box" role="alert">{{ error }}</div>{% endif %}
-{% if request.query_params %}<div class="success-box" role="status">Alteração salva e publicada na página inicial.</div>{% endif %}
+{% if request.query_params.get('notice_created') %}<div class="success-box" role="status">Aviso criado com sucesso.</div>{% elif request.query_params.get('notice_updated') %}<div class="success-box" role="status">Alterações do aviso salvas com sucesso.</div>{% elif request.query_params.get('notice_deleted') %}<div class="success-box" role="status">Aviso removido com sucesso.</div>{% endif %}
 
 {% if can_edit %}<section class="panel operations-create"><h2>Novo aviso</h2><form method="post" action="/admin/control/notices"><input type="hidden" name="csrf" value="{{ csrf_token }}"><div class="operations-form-grid"><label>Título<input name="title" required maxlength="160"></label><label>Tipo<select name="severity" required>{% for value,label in notice_severities.items() %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>Mensagem<textarea name="message" required maxlength="1200" rows="3"></textarea></label><label class="check-line"><input type="checkbox" name="is_active" checked> Publicar imediatamente</label><button class="primary">Criar aviso</button></form></section>{% endif %}
 
-<section class="operations-section"><div class="operations-section-heading"><div><h2>Avisos</h2><p>Comunicados ativos e arquivados.</p></div></div><div class="operations-admin-grid">{% for item in notices %}<form class="panel operations-item notice-editor {{ item.severity }}" method="post" action="/admin/control/notices/{{ item.id }}"><input type="hidden" name="csrf" value="{{ csrf_token }}"><div class="operations-form-grid"><label>Título<input name="title" value="{{ item.title }}" required maxlength="160" {% if not can_edit %}disabled{% endif %}></label><label>Tipo<select name="severity" {% if not can_edit %}disabled{% endif %}>{% for value,label in notice_severities.items() %}<option value="{{ value }}" {% if value == item.severity %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></div><label>Mensagem<textarea name="message" required maxlength="1200" rows="3" {% if not can_edit %}disabled{% endif %}>{{ item.message }}</textarea></label><label class="check-line"><input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %} {% if not can_edit %}disabled{% endif %}> Aviso publicado</label>{% if can_edit %}<button class="secondary">Salvar aviso</button>{% endif %}<small>Atualizado em {{ format_local_datetime(item.updated_at) }}</small></form>{% else %}<div class="panel empty-state">Nenhum aviso criado.</div>{% endfor %}</div></section>
+<section class="operations-section">
+  <div class="operations-section-heading"><div><h2>Avisos</h2><p>Edite, publique, arquive ou remova os comunicados.</p></div></div>
+  <div class="operations-admin-grid">
+    {% for item in notices %}
+    <article class="panel operations-item notice-editor {{ item.severity }}">
+      <form method="post" action="/admin/control/notices/{{ item.id }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <div class="operations-form-grid"><label>Título<input name="title" value="{{ item.title }}" required maxlength="160" {% if not can_edit %}disabled{% endif %}></label><label>Tipo<select name="severity" {% if not can_edit %}disabled{% endif %}>{% for value,label in notice_severities.items() %}<option value="{{ value }}" {% if value == item.severity %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></div>
+        <label>Mensagem<textarea name="message" required maxlength="1200" rows="3" {% if not can_edit %}disabled{% endif %}>{{ item.message }}</textarea></label>
+        <label class="check-line"><input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %} {% if not can_edit %}disabled{% endif %}> Aviso publicado</label>
+        {% if can_edit %}<button class="secondary" type="submit">Salvar alterações</button>{% endif %}
+      </form>
+      <div class="operations-item-footer">
+        <small>Atualizado em {{ format_local_datetime(item.updated_at) }}</small>
+        {% if can_edit %}<form method="post" action="/admin/control/notices/{{ item.id }}/delete" data-confirm="Deseja remover definitivamente o aviso “{{ item.title }}”?"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="danger-button" type="submit">Remover aviso</button></form>{% endif %}
+      </div>
+    </article>
+    {% else %}<div class="panel empty-state">Nenhum aviso criado.</div>{% endfor %}
+  </div>
+</section>
 {% endblock %}
-{% block styles %}<link rel="stylesheet" href="{{ url_for('static', path='css/control.css') }}"><link rel="stylesheet" href="{{ url_for('static', path='css/operations.css') }}?v=20260715-1">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', path='css/control.css') }}"><link rel="stylesheet" href="{{ url_for('static', path='css/operations.css') }}?v=20260716-2">{% endblock %}

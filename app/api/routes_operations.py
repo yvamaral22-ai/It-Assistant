@@ -101,3 +101,22 @@ def update_notice(
         {"title": item.title, "severity": item.severity, "active": item.is_active},
     )
     return RedirectResponse("/admin/control/notices?notice_updated=1", status_code=303)
+
+
+@router.post("/{item_id}/delete")
+def delete_notice(
+    request: Request,
+    item_id: int,
+    csrf: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = editor(request, db)
+    verify_csrf(request, csrf)
+    service = OperationsService(db)
+    item = service.notice(item_id)
+    if not item:
+        raise HTTPException(404, "Aviso não encontrado.")
+    details = {"title": item.title, "severity": item.severity, "active": item.is_active}
+    service.delete_notice(item)
+    audit(request, db, user, "notices.deleted", "internal_notice", item_id, details)
+    return RedirectResponse("/admin/control/notices?notice_deleted=1", status_code=303)

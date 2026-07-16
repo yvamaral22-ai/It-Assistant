@@ -75,6 +75,56 @@ def test_inactive_notice_is_not_public(authenticated_client):
     assert "Aviso oculto" not in client.get("/").text
 
 
+def test_master_can_edit_and_delete_notice(authenticated_client):
+    client = authenticated_client
+    page = client.get("/admin/control/notices")
+    csrf = csrf_from(page)
+    client.post(
+        "/admin/control/notices",
+        data={
+            "csrf": csrf,
+            "title": "Aviso temporário",
+            "message": "Mensagem original",
+            "severity": "info",
+            "is_active": "true",
+        },
+    )
+    with client.db_factory() as db:
+        item = db.scalar(select(InternalNotice).where(InternalNotice.title == "Aviso temporário"))
+        assert item
+        item_id = item.id
+
+    editor_page = client.get("/admin/control/notices")
+    assert "Salvar alterações" in editor_page.text
+    assert "Remover aviso" in editor_page.text
+    updated = client.post(
+        f"/admin/control/notices/{item_id}",
+        data={
+            "csrf": csrf_from(editor_page),
+            "title": "Aviso atualizado",
+            "message": "Mensagem revisada",
+            "severity": "warning",
+            "is_active": "true",
+        },
+        follow_redirects=False,
+    )
+    assert updated.status_code == 303
+    assert "Aviso atualizado" in client.get("/").text
+
+    delete_page = client.get("/admin/control/notices")
+    deleted = client.post(
+        f"/admin/control/notices/{item_id}/delete",
+        data={"csrf": csrf_from(delete_page)},
+        follow_redirects=False,
+    )
+    assert deleted.status_code == 303
+    assert "Aviso atualizado" not in client.get("/").text
+    with client.db_factory() as db:
+        assert db.get(InternalNotice, item_id) is None
+        assert db.scalar(select(AuditLog).where(AuditLog.action == "notices.updated"))
+        assert db.scalar(select(AuditLog).where(AuditLog.action == "notices.deleted"))
+
+
 def test_analyst_can_read_but_cannot_change_notices(client):
     password = "Temporary-password-2026"
     with client.db_factory() as db:
@@ -90,3 +140,7 @@ def test_analyst_can_read_but_cannot_change_notices(client):
         },
     )
     assert response.status_code == 403
+    assert client.post(
+        "/admin/control/notices/1/delete",
+        data={"csrf": "not-used-without-write-permission"},
+    ).status_code == 403

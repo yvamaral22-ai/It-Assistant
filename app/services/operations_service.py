@@ -60,6 +60,10 @@ class OperationsService:
     def notice(self, item_id: int) -> InternalNotice | None:
         return self.db.get(InternalNotice, item_id)
 
+    def delete_notice(self, item: InternalNotice) -> None:
+        self.db.delete(item)
+        self.db.commit()
+
     @staticmethod
     def _required(value: str) -> str:
         normalized = value.strip()
