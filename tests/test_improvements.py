@@ -148,7 +148,7 @@ def test_alembic_builds_new_database(tmp_path):
     schema = inspect(create_engine(f"sqlite:///{database.as_posix()}"))
     assert {
         "sessions", "interactions", "users", "knowledge_versions", "audit_logs",
-        "internal_notices",
+        "internal_notices", "process_posts",
     }.issubset(
         schema.get_table_names()
     )

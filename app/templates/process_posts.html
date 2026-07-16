@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Processos internos · IT Self-Service Assistant{% endblock %}
+{% block content %}
+<section class="control-heading"><div><a href="/admin/control" class="auth-back">← Painel de controle</a><span class="eyebrow">CONTEÚDO MASTER</span><h1>Processos internos</h1><p>Gerencie as instruções exibidas aos colaboradores na página inicial.</p></div></section>
+{% if error %}<div class="error-box" role="alert">{{ error }}</div>{% endif %}
+{% if request.query_params %}<div class="success-box" role="status">Alteração salva com sucesso.</div>{% endif %}
+
+<section class="panel process-editor-create">
+  <h2>Novo tópico</h2>
+  <form method="post" action="/admin/control/processes">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="process-editor-grid">
+      <label>Título<input name="title" required maxlength="180" placeholder="Ex.: Como solicito acesso ao sistema?"></label>
+      <label>Ordem<input type="number" name="display_order" min="0" max="999" value="50"></label>
+    </div>
+    <label>Instruções<textarea name="content" required maxlength="5000" rows="6" placeholder="Descreva os requisitos, aprovações e passos necessários."></textarea></label>
+    <label class="check-line"><input type="checkbox" name="is_active" checked> Publicar na página inicial</label>
+    <button class="primary" type="submit">Adicionar tópico</button>
+  </form>
+</section>
+
+<section class="process-admin-list">
+  <div><h2>Tópicos cadastrados</h2><p>{{ posts|length }} tópico(s), incluindo conteúdos ocultos.</p></div>
+  {% for item in posts %}
+  <article class="panel process-editor-item">
+    <form method="post" action="/admin/control/processes/{{ item.id }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <div class="process-editor-grid">
+        <label>Título<input name="title" value="{{ item.title }}" required maxlength="180"></label>
+        <label>Ordem<input type="number" name="display_order" value="{{ item.display_order }}" min="0" max="999"></label>
+      </div>
+      <label>Instruções<textarea name="content" required maxlength="5000" rows="6">{{ item.content }}</textarea></label>
+      <label class="check-line"><input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}> Publicado</label>
+      <div class="process-editor-actions"><button class="secondary" type="submit">Salvar alterações</button><small>Atualizado em {{ format_local_datetime(item.updated_at) }}</small></div>
+    </form>
+    <form method="post" action="/admin/control/processes/{{ item.id }}/delete" data-confirm="Excluir permanentemente o tópico “{{ item.title }}”?">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <button class="danger-button" type="submit">Excluir tópico</button>
+    </form>
+  </article>
+  {% else %}
+  <div class="panel empty-state">Nenhum tópico cadastrado.</div>
+  {% endfor %}
+</section>
+{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', path='css/control.css') }}"><link rel="stylesheet" href="{{ url_for('static', path='css/processes.css') }}?v=20260716-1">{% endblock %}

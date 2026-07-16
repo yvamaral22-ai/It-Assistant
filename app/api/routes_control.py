@@ -138,6 +138,7 @@ def control_panel(request: Request, db: Session = Depends(get_db)):
         "csrf_token": csrf_token(request),
         "can_edit": has_permission(user, "knowledge.write"),
         "can_manage_notices": has_permission(user, "notices.read"),
+        "can_manage_processes": has_permission(user, "processes.manage"),
         "can_manage_users": has_permission(user, "users.manage"),
     })
 
@@ -303,6 +304,7 @@ def change_password(
         "csrf_token": csrf_token(request),
         "can_edit": has_permission(user, "knowledge.write"),
         "can_manage_notices": has_permission(user, "notices.read"),
+        "can_manage_processes": has_permission(user, "processes.manage"),
         "can_manage_users": has_permission(user, "users.manage"),
         **message,
     })

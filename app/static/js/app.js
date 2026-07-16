@@ -112,3 +112,44 @@ const initBrandScrollTrigger = () => {
 };
 
 initBrandScrollTrigger();
+
+const initProcessTabs = () => {
+  const tabs = [...document.querySelectorAll('[data-process-tab]')];
+  const panels = [...document.querySelectorAll('[data-process-panel]')];
+  if (!tabs.length || !panels.length) return;
+
+  const activate = tab => {
+    const selectedId = tab.dataset.processTab;
+    tabs.forEach(item => {
+      const selected = item === tab;
+      item.setAttribute('aria-selected', String(selected));
+      item.tabIndex = selected ? 0 : -1;
+    });
+    panels.forEach(panel => {
+      panel.hidden = panel.dataset.processPanel !== selectedId;
+    });
+  };
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activate(tab));
+    tab.addEventListener('keydown', event => {
+      if (!['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const forward = ['ArrowDown', 'ArrowRight'].includes(event.key);
+      let targetIndex = forward ? index + 1 : index - 1;
+      if (event.key === 'Home') targetIndex = 0;
+      if (event.key === 'End') targetIndex = tabs.length - 1;
+      const target = tabs[(targetIndex + tabs.length) % tabs.length];
+      activate(target);
+      target.focus();
+    });
+  });
+};
+
+document.querySelectorAll('form[data-confirm]').forEach(form => {
+  form.addEventListener('submit', event => {
+    if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+  });
+});
+
+initProcessTabs();

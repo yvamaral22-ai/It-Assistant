@@ -5,7 +5,8 @@ from alembic import context
 from app.config import get_settings
 from app.database import Base
 from app.models import (  # noqa: F401
-    AuditLog, Interaction, InternalNotice, KnowledgeVersion, SupportSession, User,
+    AuditLog, Interaction, InternalNotice, KnowledgeVersion,
+    ProcessPost, SupportSession, User,
 )
 
 config = context.config

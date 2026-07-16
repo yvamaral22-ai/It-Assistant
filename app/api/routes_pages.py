@@ -12,6 +12,7 @@ from app.repositories.session_repository import SessionRepository
 from app.services.summary_service import build_summary
 from app.services.access_control import authorized_user, redirect_to_login
 from app.services.operations_service import NOTICE_SEVERITIES, OperationsService
+from app.services.process_post_service import ProcessPostService
 
 router = APIRouter()
 templates = Jinja2Templates(directory=BASE_DIR / "app" / "templates")
@@ -28,6 +29,7 @@ def index(request: Request, db: Session = Depends(get_db)):
         "categories": categories,
         "notices": operations.public_notices(),
         "notice_severities": NOTICE_SEVERITIES,
+        "process_posts": ProcessPostService(db).public_posts(),
     })
 
 
