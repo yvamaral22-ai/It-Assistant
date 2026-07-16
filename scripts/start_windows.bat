@@ -17,7 +17,7 @@ echo [5/7] Aplicando migracoes do banco de dados...
 python scripts\initialize_database.py || (echo ERRO: falha ao inicializar o banco. & exit /b 1)
 echo [6/7] Verificando usuario master...
 python scripts\create_master_user.py --if-missing || (echo ERRO: falha ao configurar o usuario master. & exit /b 1)
-echo [7/7] Iniciando em http://127.0.0.1:8000
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+echo [7/7] Iniciando em http://127.0.0.1:8000 com recarregamento automatico
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 if errorlevel 1 (echo ERRO: o servidor foi encerrado com falha. & exit /b 1)
 endlocal
