@@ -27,6 +27,7 @@ def test_password_hash_is_salted_and_verifiable():
     first = hash_password("A-strong-local-password-2026")
     second = hash_password("A-strong-local-password-2026")
     assert first != second
+    assert first.startswith("scrypt$32768$8$3$")
     assert verify_password("A-strong-local-password-2026", first)
     assert not verify_password("wrong-password", first)
 

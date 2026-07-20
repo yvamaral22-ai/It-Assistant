@@ -11,6 +11,7 @@ from app.repositories.knowledge_repository import KnowledgeBaseError, KnowledgeR
 from app.repositories.session_repository import SessionRepository
 from app.services.summary_service import build_summary
 from app.services.access_control import authorized_user, redirect_to_login
+from app.services.audit_service import AuditService
 from app.services.operations_service import NOTICE_SEVERITIES, OperationsService
 from app.services.process_post_service import ProcessPostService
 
@@ -66,7 +67,8 @@ def admin_sessions(
 
 @router.get("/admin/sessions/{session_id}", response_class=HTMLResponse)
 def admin_detail(request: Request, session_id: str, db: Session = Depends(get_db)):
-    if not authorized_user(request, db, "sessions.read"):
+    user = authorized_user(request, db, "sessions.read")
+    if not user:
         return redirect_to_login(request)
     try:
         valid_session_id = str(uuid.UUID(session_id))
@@ -75,4 +77,11 @@ def admin_detail(request: Request, session_id: str, db: Session = Depends(get_db
     item = SessionRepository(db).get(valid_session_id)
     if not item:
         raise HTTPException(404, "Atendimento não encontrado.")
+    AuditService(db).record(
+        user,
+        "sessions.viewed",
+        "support_session",
+        item.id,
+        ip_address=request.client.host if request.client else None,
+    )
     return templates.TemplateResponse(request, "summary.html", {"session": item, "summary": build_summary(item), "admin": True})

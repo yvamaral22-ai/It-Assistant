@@ -1,7 +1,8 @@
 import logging
+import secrets
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -26,25 +27,30 @@ def valid_id(value: str) -> str:
         raise HTTPException(422, "ID de atendimento inválido.") from exc
 
 
-def get_or_404(repo: SessionRepository, session_id: str):
-    item = repo.get(valid_id(session_id))
+def get_or_404(request: Request, repo: SessionRepository, session_id: str):
+    normalized_id = valid_id(session_id)
+    owned_id = str(request.session.get("diagnostic_session_id", ""))
+    if not owned_id or not secrets.compare_digest(owned_id, normalized_id):
+        raise HTTPException(404, "Atendimento não encontrado.")
+    item = repo.get(normalized_id)
     if not item:
         raise HTTPException(404, "Atendimento não encontrado.")
     return item
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create(payload: SessionCreate, repo: SessionRepository = Depends(repository)):
+def create(request: Request, payload: SessionCreate, repo: SessionRepository = Depends(repository)):
     try:
         item, node = DiagnosticService(repo).create_session(payload)
+        request.session["diagnostic_session_id"] = item.id
         return {"session": SessionRead.model_validate(item), "node": node, "can_go_back": False}
     except (DiagnosticError, KnowledgeBaseError) as exc:
         raise HTTPException(422, str(exc)) from exc
 
 
 @router.get("/{session_id}")
-def read(session_id: str, repo: SessionRepository = Depends(repository)):
-    item = get_or_404(repo, session_id)
+def read(request: Request, session_id: str, repo: SessionRepository = Depends(repository)):
+    item = get_or_404(request, repo, session_id)
     try:
         node = DiagnosticService(repo).current_node(item)
     except (DiagnosticError, KnowledgeBaseError) as exc:
@@ -57,8 +63,11 @@ def read(session_id: str, repo: SessionRepository = Depends(repository)):
 
 
 @router.post("/{session_id}/answer")
-def answer(session_id: str, payload: AnswerRequest, repo: SessionRepository = Depends(repository)):
-    item = get_or_404(repo, session_id)
+def answer(
+    request: Request, session_id: str, payload: AnswerRequest,
+    repo: SessionRepository = Depends(repository),
+):
+    item = get_or_404(request, repo, session_id)
     try:
         node_id, node = DiagnosticService(repo).answer(item, payload)
         return {"node_id": node_id, "node": node, "can_go_back": True}
@@ -67,8 +76,10 @@ def answer(session_id: str, payload: AnswerRequest, repo: SessionRepository = De
 
 
 @router.post("/{session_id}/continue")
-def continue_flow(session_id: str, repo: SessionRepository = Depends(repository)):
-    item = get_or_404(repo, session_id)
+def continue_flow(
+    request: Request, session_id: str, repo: SessionRepository = Depends(repository),
+):
+    item = get_or_404(request, repo, session_id)
     try:
         node_id, node = DiagnosticService(repo).continue_after_solution(item)
         return {"node_id": node_id, "node": node, "can_go_back": repo.has_answer(item.id)}
@@ -77,8 +88,11 @@ def continue_flow(session_id: str, repo: SessionRepository = Depends(repository)
 
 
 @router.post("/{session_id}/solution-result")
-def solution_result(session_id: str, payload: SolutionResultRequest, repo: SessionRepository = Depends(repository)):
-    item = get_or_404(repo, session_id)
+def solution_result(
+    request: Request, session_id: str, payload: SolutionResultRequest,
+    repo: SessionRepository = Depends(repository),
+):
+    item = get_or_404(request, repo, session_id)
     if payload.result == "not_tested":
         repo.mark_solution_result(item, "not_tested")
         return {"status": "in_progress", "message": "Atendimento mantido na orientação atual."}
@@ -106,8 +120,11 @@ def solution_result(session_id: str, payload: SolutionResultRequest, repo: Sessi
 
 
 @router.post("/{session_id}/feedback")
-def feedback(session_id: str, payload: FeedbackRequest, repo: SessionRepository = Depends(repository)):
-    item = get_or_404(repo, session_id)
+def feedback(
+    request: Request, session_id: str, payload: FeedbackRequest,
+    repo: SessionRepository = Depends(repository),
+):
+    item = get_or_404(request, repo, session_id)
     if item.status == "in_progress":
         raise HTTPException(422, "Finalize o diagnóstico antes de avaliá-lo.")
     repo.save_feedback(item, payload.rating, payload.feedback)
@@ -115,8 +132,8 @@ def feedback(session_id: str, payload: FeedbackRequest, repo: SessionRepository 
 
 
 @router.post("/{session_id}/back")
-def back(session_id: str, repo: SessionRepository = Depends(repository)):
-    item = get_or_404(repo, session_id)
+def back(request: Request, session_id: str, repo: SessionRepository = Depends(repository)):
+    item = get_or_404(request, repo, session_id)
     try:
         node_id, node = DiagnosticService(repo).back(item)
         return {"node_id": node_id, "node": node, "can_go_back": repo.has_answer(item.id)}
@@ -125,8 +142,11 @@ def back(session_id: str, repo: SessionRepository = Depends(repository)):
 
 
 @router.post("/{session_id}/finish")
-def finish(session_id: str, payload: FinishRequest, repo: SessionRepository = Depends(repository)):
-    item = get_or_404(repo, session_id)
+def finish(
+    request: Request, session_id: str, payload: FinishRequest,
+    repo: SessionRepository = Depends(repository),
+):
+    item = get_or_404(request, repo, session_id)
     if payload.status == "not_tested":
         return {"status": "in_progress", "message": "Atendimento mantido em andamento."}
     try:
@@ -141,5 +161,5 @@ def finish(session_id: str, payload: FinishRequest, repo: SessionRepository = De
 
 
 @router.get("/{session_id}/summary")
-def summary(session_id: str, repo: SessionRepository = Depends(repository)):
-    return {"summary": build_summary(get_or_404(repo, session_id))}
+def summary(request: Request, session_id: str, repo: SessionRepository = Depends(repository)):
+    return {"summary": build_summary(get_or_404(request, repo, session_id))}

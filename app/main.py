@@ -8,12 +8,17 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api import (
     routes_control, routes_diagnostics, routes_operations, routes_pages,
     routes_processes, routes_reports, routes_sessions, routes_users,
 )
 from app.config import BASE_DIR, get_session_secret, get_settings
+from app.services.security_service import (
+    add_security_headers, invalid_cross_origin_request, request_too_large,
+    validate_security_settings,
+)
 from app.database_migrations import run_migrations
 from app.database import engine
 from app.repositories.knowledge_repository import KnowledgeRepository
@@ -55,14 +60,27 @@ async def lifespan(_: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    application = FastAPI(title=settings.app_name, debug=settings.app_debug, lifespan=lifespan)
+    validate_security_settings(settings)
+    application = FastAPI(
+        title=settings.app_name,
+        debug=settings.app_debug,
+        lifespan=lifespan,
+        docs_url="/docs" if settings.api_docs_enabled and not settings.is_production else None,
+        redoc_url="/redoc" if settings.api_docs_enabled and not settings.is_production else None,
+        openapi_url="/openapi.json" if settings.api_docs_enabled and not settings.is_production else None,
+    )
     application.add_middleware(
         SessionMiddleware,
         secret_key=get_session_secret(settings),
         same_site="strict",
-        https_only=settings.app_env == "production",
-        max_age=28_800,
+        https_only=settings.is_production,
+        max_age=settings.session_max_age_seconds,
+        session_cookie="__Host-it_assistant_session" if settings.is_production else "it_assistant_session",
     )
+    allowed_hosts = settings.allowed_hosts_list.copy()
+    if not settings.is_production:
+        allowed_hosts.append("testserver")
+    application.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts, www_redirect=False)
     application.mount("/static", StaticFiles(directory=BASE_DIR / "app" / "static"), name="static")
     application.include_router(routes_pages.router)
     application.include_router(routes_sessions.router)
@@ -74,14 +92,28 @@ def create_app() -> FastAPI:
     application.include_router(routes_processes.router)
 
     @application.middleware("http")
-    async def maintenance_guard(request: Request, call_next):
+    async def security_and_maintenance_guard(request: Request, call_next):
+        rejected = request_too_large(request, settings)
+        if rejected:
+            add_security_headers(rejected, request, settings)
+            return rejected
+        if invalid_cross_origin_request(request, settings):
+            rejected = JSONResponse(
+                status_code=403,
+                content={"detail": "Origem da requisição não autorizada."},
+            )
+            add_security_headers(rejected, request, settings)
+            return rejected
         if settings.maintenance_mode and not request.url.path.startswith(("/admin", "/health", "/ready", "/static")):
-            return HTMLResponse(
+            response = HTMLResponse(
                 "<main style='font-family:system-ui;max-width:700px;margin:10vh auto;padding:24px'>"
                 "<h1>Manutenção programada</h1><p>O assistente está temporariamente indisponível. Tente novamente em alguns minutos.</p></main>",
                 status_code=503,
             )
-        return await call_next(request)
+        else:
+            response = await call_next(request)
+        add_security_headers(response, request, settings)
+        return response
 
     @application.get("/health")
     def health(): return {"status": "ok", "application": settings.app_name}

@@ -11,6 +11,7 @@ from app.database import get_db
 from app.repositories.knowledge_repository import KnowledgeRepository
 from app.services.report_service import ReportFilters, ReportService
 from app.services.access_control import authorized_user, redirect_to_login
+from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/admin/reports", tags=["reports"])
 templates = Jinja2Templates(directory=BASE_DIR / "app" / "templates")
@@ -82,9 +83,22 @@ def export_reports(
     filters: ReportFilters = Depends(report_filters),
     db: Session = Depends(get_db),
 ):
-    if not authorized_user(request, db, "reports.export"):
+    user = authorized_user(request, db, "reports.export")
+    if not user:
         return redirect_to_login(request)
     content = ReportService(db).export_csv(filters)
+    AuditService(db).record(
+        user,
+        "reports.exported",
+        "support_session",
+        details={
+            "date_from": str(filters.date_from) if filters.date_from else None,
+            "date_to": str(filters.date_to) if filters.date_to else None,
+            "category": filters.category,
+            "status": filters.status,
+        },
+        ip_address=request.client.host if request.client else None,
+    )
     return Response(
         content=content,
         media_type="text/csv; charset=utf-8",

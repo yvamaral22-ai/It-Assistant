@@ -5,7 +5,7 @@ from alembic.config import Config
 from sqlalchemy import inspect, select
 
 from app.config import BASE_DIR
-from app.models import AuditLog, KnowledgeVersion, User
+from app.models import AuditLog, KnowledgeVersion, SupportSession, User
 from app.repositories.knowledge_repository import KnowledgeRepository
 from app.services.auth_service import AuthService
 from app.services.knowledge_version_service import KnowledgeVersionService
@@ -38,7 +38,9 @@ def test_structured_session_data_and_feedback(client, session_payload):
     }
     created = client.post("/api/sessions", json=payload).json()
     session_id = created["session"]["id"]
-    assert created["session"]["asset_tag"] == "PAT-123"
+    assert "asset_tag" not in created["session"]
+    with client.db_factory() as db:
+        assert db.get(SupportSession, session_id).asset_tag == "PAT-123"
     client.post(
         f"/api/sessions/{session_id}/answer",
         json={"node_id": "excel_001", "value": "no"},
@@ -50,8 +52,11 @@ def test_structured_session_data_and_feedback(client, session_payload):
     )
     assert feedback.status_code == 200
     saved = client.get(f"/api/sessions/{session_id}").json()["session"]
-    assert saved["rating"] == 5
-    assert saved["final_feedback"] == "Orientação clara"
+    assert "rating" not in saved and "final_feedback" not in saved
+    with client.db_factory() as db:
+        item = db.get(SupportSession, session_id)
+        assert item.rating == 5
+        assert item.final_feedback == "Orientação clara"
 
 
 def test_valid_knowledge_change_creates_draft_without_publishing(authenticated_client):

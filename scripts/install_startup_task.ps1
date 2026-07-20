@@ -1,7 +1,12 @@
-param([string]$TaskName = "IT Self-Service Assistant")
+param(
+    [string]$TaskName = "IT Self-Service Assistant",
+    [ValidateSet("Production", "Pilot")]
+    [string]$Mode = "Production"
+)
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$launcher = Join-Path $root "scripts\run_server.bat"
+$launcherName = if ($Mode -eq "Production") { "run_server_production.bat" } else { "run_server.bat" }
+$launcher = Join-Path $root "scripts\$launcherName"
 if (-not (Test-Path $launcher)) { throw "Launcher não encontrado: $launcher" }
 $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$launcher`"" -WorkingDirectory $root
 $trigger = New-ScheduledTaskTrigger -AtStartup

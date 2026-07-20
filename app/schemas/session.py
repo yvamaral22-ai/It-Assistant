@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,22 +22,8 @@ class SessionCreate(BaseModel):
 class SessionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    user_name: str | None
-    department: str | None
-    computer_name: str | None
-    location: str | None
-    asset_tag: str | None
-    device_model: str | None
     category: str
-    issue_type: str | None
-    urgency: str | None
-    impact: str | None
     status: str
-    started_at: datetime
-    finished_at: datetime | None
-    initial_description: str | None
-    final_feedback: str | None
-    rating: int | None
     current_node_id: str | None
 
 

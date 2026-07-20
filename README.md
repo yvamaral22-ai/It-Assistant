@@ -55,6 +55,7 @@ Para redefinir o master localmente:
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m ruff check app scripts tests migrations
+.\.venv\Scripts\python.exe scripts\audit_dependencies.py
 ```
 
 Os testes usam SQLite temporário e validam regras, segurança, relatórios, versionamento e migrações.
@@ -100,10 +101,14 @@ Consulte `deployment/README.md` para inicialização automática, backup diário
 
 - Administração, histórico, relatórios e exportações exigem autenticação e permissão.
 - Formulários administrativos usam CSRF, cookie assinado e limitação de login.
+- Cada diagnóstico fica vinculado à sessão assinada do navegador; conhecer outro UUID não concede acesso ao atendimento.
+- As APIs públicas retornam somente o estado mínimo necessário e não devolvem identificação, máquina ou descrição.
+- Respostas usam CSP, proteção contra framing e MIME sniffing, política de origem, `no-store` para dados dinâmicos e hosts permitidos.
+- Alterações de senha ou papel invalidam sessões administrativas antigas.
 - A auditoria não registra senhas.
 - CSV é protegido contra fórmulas de planilha.
 - O diagnóstico não solicita senha, não executa comandos e não aceita código do navegador.
-- Em produção, configure `APP_ENV=production`, `APP_DEBUG=false`, `SECRET_KEY` forte e HTTPS.
+- Em produção, configure `APP_ENV=production`, `APP_DEBUG=false`, `SECRET_KEY` forte, `ALLOWED_HOSTS`, `PUBLIC_BASE_URL` HTTPS e use `scripts\run_server_production.bat` atrás do IIS.
 
 ## Limitações
 

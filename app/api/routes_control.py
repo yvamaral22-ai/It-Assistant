@@ -15,7 +15,9 @@ from app.database import get_db
 from app.models import AuditLog, User
 from app.repositories.knowledge_repository import KnowledgeBaseError, KnowledgeRepository
 from app.services.auth_service import AuthService
-from app.services.access_control import ROLE_PERMISSIONS, authorized_user, has_permission, redirect_to_login
+from app.services.access_control import (
+    ROLE_PERMISSIONS, authenticated_user, authorized_user, has_permission, redirect_to_login,
+)
 from app.services.audit_service import AuditService
 from app.services.knowledge_version_service import KnowledgeVersionService
 
@@ -68,7 +70,8 @@ def verify_csrf(request: Request, received: str) -> None:
 
 
 def active_master(request: Request, db: Session) -> User | None:
-    return AuthService(db).get_active_master(request.session.get("user_id"))
+    user = authenticated_user(request, db)
+    return user if user and user.role == "master" else None
 
 
 def login_context(request: Request, error: str | None = None) -> dict:
@@ -77,7 +80,7 @@ def login_context(request: Request, error: str | None = None) -> dict:
 
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, db: Session = Depends(get_db)):
-    if AuthService(db).get_active_user(request.session.get("user_id")):
+    if authenticated_user(request, db):
         return RedirectResponse("/admin/control", status_code=303)
     return templates.TemplateResponse(request, "login.html", login_context(request))
 
@@ -111,14 +114,19 @@ def login(
     if not isinstance(destination, str) or not destination.startswith("/admin/"):
         destination = "/admin/control"
     request.session.clear()
-    request.session.update({"user_id": user.id, "role": user.role, "csrf_token": secrets.token_urlsafe(32)})
+    request.session.update({
+        "user_id": user.id,
+        "role": user.role,
+        "auth_marker": AuthService.session_marker(user),
+        "csrf_token": secrets.token_urlsafe(32),
+    })
     return RedirectResponse(destination, status_code=303)
 
 
 @router.post("/logout")
 def logout(request: Request, csrf: str = Form(...), db: Session = Depends(get_db)):
     verify_csrf(request, csrf)
-    user = AuthService(db).get_active_user(request.session.get("user_id"))
+    user = authenticated_user(request, db)
     if user:
         AuditService(db).record(
             user, "auth.logout", "user", user.id, ip_address=request.client.host if request.client else None
@@ -283,7 +291,7 @@ def change_password(
     csrf: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    user = AuthService(db).get_active_user(request.session.get("user_id"))
+    user = authenticated_user(request, db)
     if not user:
         raise HTTPException(401, "Autenticação master necessária.")
     verify_csrf(request, csrf)
@@ -294,6 +302,7 @@ def change_password(
         message = {"password_error": "A senha atual está incorreta."}
     else:
         message = {"password_success": "Senha alterada com sucesso."}
+        request.session["auth_marker"] = AuthService.session_marker(user)
         AuditService(db).record(
             user, "user.password_changed", "user", user.id,
             ip_address=request.client.host if request.client else None,

@@ -8,17 +8,20 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import User
+from app.config import get_session_secret, get_settings
 
-SCRYPT_N = 2**14
+SCRYPT_N = 2**15
 SCRYPT_R = 8
-SCRYPT_P = 1
+SCRYPT_P = 3
+SCRYPT_MAX_MEMORY = 64 * 1024 * 1024
 
 
 def hash_password(password: str) -> str:
     """Hash a password with scrypt and a unique random salt."""
     salt = secrets.token_bytes(16)
     digest = hashlib.scrypt(
-        password.encode("utf-8"), salt=salt, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P, dklen=32
+        password.encode("utf-8"), salt=salt, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P,
+        dklen=32, maxmem=SCRYPT_MAX_MEMORY,
     )
     return "scrypt${}${}${}${}${}".format(
         SCRYPT_N,
@@ -37,7 +40,8 @@ def verify_password(password: str, encoded: str) -> bool:
         salt = base64.urlsafe_b64decode(salt_value.encode("ascii"))
         expected = base64.urlsafe_b64decode(digest_value.encode("ascii"))
         actual = hashlib.scrypt(
-            password.encode("utf-8"), salt=salt, n=int(n), r=int(r), p=int(p), dklen=len(expected)
+            password.encode("utf-8"), salt=salt, n=int(n), r=int(r), p=int(p),
+            dklen=len(expected), maxmem=SCRYPT_MAX_MEMORY,
         )
         return hmac.compare_digest(actual, expected)
     except (ValueError, TypeError):
@@ -52,9 +56,30 @@ class AuthService:
         user = self.db.scalar(select(User).where(User.username == username.strip().lower()))
         if not user or not user.is_active or not verify_password(password, user.password_hash):
             return None
+        if self.password_hash_needs_upgrade(user.password_hash):
+            user.password_hash = hash_password(password)
         user.last_login_at = datetime.now(timezone.utc)
         self.db.commit()
         return user
+
+    @staticmethod
+    def password_hash_needs_upgrade(encoded: str) -> bool:
+        try:
+            algorithm, n, r, p, *_ = encoded.split("$")
+            return (
+                algorithm != "scrypt"
+                or int(n) != SCRYPT_N
+                or int(r) != SCRYPT_R
+                or int(p) != SCRYPT_P
+            )
+        except (ValueError, TypeError):
+            return True
+
+    @staticmethod
+    def session_marker(user: User) -> str:
+        secret = get_session_secret(get_settings()).encode("utf-8")
+        state = f"{user.id}:{user.role}:{user.password_hash}".encode("utf-8")
+        return hmac.new(secret, state, hashlib.sha256).hexdigest()
 
     def get_active_user(self, user_id: int | None) -> User | None:
         if not user_id:

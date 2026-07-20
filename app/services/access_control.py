@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -22,8 +24,24 @@ def has_permission(user: User, permission: str) -> bool:
     return "*" in permissions or permission in permissions
 
 
+def authenticated_user(request: Request, db: Session) -> User | None:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return None
+    user = AuthService(db).get_active_user(user_id)
+    received_marker = request.session.get("auth_marker", "")
+    if (
+        not user
+        or not received_marker
+        or not secrets.compare_digest(received_marker, AuthService.session_marker(user))
+    ):
+        request.session.clear()
+        return None
+    return user
+
+
 def authorized_user(request: Request, db: Session, permission: str) -> User | None:
-    user = AuthService(db).get_active_user(request.session.get("user_id"))
+    user = authenticated_user(request, db)
     if not user or not has_permission(user, permission):
         return None
     return user

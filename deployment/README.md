@@ -9,13 +9,28 @@ O arquivo `iis/web.config.example` é uma referência para URL Rewrite + ARR. A 
 ## Preparação
 
 1. Use uma VM ou servidor Windows dedicado e uma conta de serviço sem login interativo.
-2. Copie `.env.example` para `.env`, defina `APP_ENV=production`, uma `SECRET_KEY` forte e a `DATABASE_URL`.
+2. Copie `.env.example` para `.env`, defina `APP_ENV=production`, `APP_DEBUG=false`, uma `SECRET_KEY` forte, `PUBLIC_BASE_URL=https://...`, `ALLOWED_HOSTS` e a `DATABASE_URL`.
 3. Para PostgreSQL, use `DATABASE_URL=postgresql+psycopg://usuario:senha@servidor/banco` e guarde o segredo no mecanismo aprovado pela empresa.
 4. Execute `scripts\start_windows.bat` uma vez para instalar dependências e migrar o banco.
-5. Instale a inicialização automática com `powershell -ExecutionPolicy Bypass -File scripts\install_startup_task.ps1`.
+5. Configure a tarefa para executar `scripts\run_server_production.bat` com uma conta de serviço dedicada e sem login interativo.
 6. Instale o backup diário com `powershell -ExecutionPolicy Bypass -File scripts\install_backup_task.ps1` (para PostgreSQL, substitua pelo `pg_dump` corporativo).
 7. Configure IIS/HTTPS e encaminhe somente para `127.0.0.1:8000`.
 8. Monitore `/health` (processo) e `/ready` (banco e conhecimento).
+
+## Controles obrigatórios de segurança
+
+- Não publique a porta 8000 diretamente para os colaboradores. Somente o IIS deve acessá-la em `127.0.0.1`.
+- Use certificado HTTPS emitido ou aprovado pela infraestrutura corporativa. HTTP não protege senhas nem dados em trânsito.
+- Restrinja `ALLOWED_HOSTS` ao DNS oficial e configure `PUBLIC_BASE_URL` com exatamente a origem HTTPS pública.
+- Desabilite listagem de diretórios e limite a pasta do aplicativo à conta de serviço, Administradores e SYSTEM.
+- Para endurecer `data` e `.env`, execute como administrador e informe a conta real do serviço:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\harden_data_permissions.ps1 -ServiceAccount "DOMINIO\conta-servico"
+```
+
+- Use PostgreSQL e criptografia de disco para dados corporativos. SQLite deve ficar restrito ao piloto de baixo volume.
+- Envie logs de auditoria para a solução corporativa de monitoramento e teste restaurações de backup periodicamente.
 
 ## Manutenção
 
