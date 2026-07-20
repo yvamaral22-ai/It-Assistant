@@ -1,4 +1,8 @@
-{"category":"impressora","title":"Problemas com impressora","start_node":"printer_001","nodes":{
+{"category":"impressora","title":"Problemas com impressora","start_node":"printer_001","triage_rules":[
+{"id":"printer_offline","label":"Impressora offline ou indisponível","target_node":"printer_001","keywords":["impressora offline","impressora indisponível","impressora não aparece","não conecta na impressora"]},
+{"id":"printer_queue","label":"Documento preso na fila de impressão","target_node":"printer_002","keywords":["documento preso na fila","fila de impressão travada","não sai da fila","documento não imprime"]},
+{"id":"printer_wrong_device","label":"Impressão enviada para outra impressora","target_node":"printer_002","keywords":["impressora errada","imprimiu em outra impressora","não encontro a impressora correta"]}
+],"nodes":{
 "printer_001":{"type":"question","text":"A impressora está ligada e sem luzes de erro?","options":[{"label":"Sim","value":"yes","next":"printer_002"},{"label":"Não","value":"no","next":"printer_power"},{"label":"Não sei","value":"unknown","next":"printer_power"}]},
 "printer_002":{"type":"question","text":"A impressora correta está selecionada?","options":[{"label":"Sim","value":"yes","next":"printer_queue"},{"label":"Não","value":"no","next":"printer_select"},{"label":"Não sei","value":"unknown","next":"printer_select"}]},
 "printer_power":{"type":"solution","title":"Verifique energia e conexão","text":"Faça apenas verificações visuais e seguras.","steps":["Confirme se o cabo de energia está firme.","Se for USB, confirme o cabo no computador.","Se for de rede, não desconecte cabos do rack.","Ligue a impressora e aguarde ficar pronta."],"ask_if_resolved":true,"unresolved_next":"printer_attempt_2"},

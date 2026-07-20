@@ -6,6 +6,7 @@ Sistema interno de autoatendimento de TI. Conduz o usuário por perguntas em JSO
 
 - Sete categorias: Excel, Outlook, navegador, impressora, Windows, rede e outros.
 - Diagnóstico de uma pergunta por vez, retorno seguro e retomada de sessão.
+- Interpretação do relato por regras aprovadas, com nível de confiança e confirmação antes da solução.
 - Busca de categoria, impressão, resumo copiável e avaliação de 1 a 5.
 - Dados estruturados de localidade e tipo de problema.
 - Histórico protegido e relatórios com filtros e CSV.
@@ -73,7 +74,9 @@ O master gerencia acessos em `/admin/control/users`. O último master ativo não
 
 As categorias ficam em `app/knowledge_base`. O painel `/admin/control` cria versões no banco. Salvar gera um rascunho validado; publicar troca o JSON ativo e preserva a versão anterior.
 
-Cada arquivo contém `category`, `title`, `start_node` e `nodes`. Nós podem ser `question`, `solution` ou `end`. Perguntas exigem opções com `label`, `value` e `next`. Soluções usam `title`, `text`, `steps`, `ask_if_resolved` e opcionalmente `unresolved_next`, `media` e `media_alt`.
+Cada arquivo contém `category`, `title`, `start_node`, `triage_rules` e `nodes`. Cada regra de triagem define `id`, `label`, `target_node` e `keywords`. O destino deve ser obrigatoriamente uma pergunta; a interpretação nunca pula direto para uma solução. Nós podem ser `question`, `solution` ou `end`. Perguntas exigem opções com `label`, `value` e `next`. Soluções usam `title`, `text`, `steps`, `ask_if_resolved` e opcionalmente `unresolved_next`, `media` e `media_alt`.
+
+Correspondências fortes iniciam na pergunta de confirmação mais relevante. Correspondências médias ou fracas preservam o fluxo inicial. Toda orientação mostra a origem na base aprovada pela TI. A arquitetura e a evolução planejada para GLPI e IA estão em `deployment/KNOWLEDGE_INTEGRATION.md`.
 
 A validação rejeita JSON inválido, início ou destino inexistente, pergunta sem opções, tipo inválido e ciclos alcançáveis.
 
@@ -113,7 +116,7 @@ Consulte `deployment/README.md` para inicialização automática, backup diário
 ## Limitações
 
 - SQLite é adequado para piloto e baixo volume; use PostgreSQL para concorrência corporativa.
-- GLPI, AD e Microsoft Graph ainda não realizam chamadas reais.
+- GLPI, IA, AD e Microsoft Graph ainda não realizam chamadas reais; a primeira etapa usa somente a base JSON local aprovada.
 - DNS, certificado e regras de firewall dependem da infraestrutura da empresa.
 - Não há execução remota, upload, agente local ou inteligência artificial.
 

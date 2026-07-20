@@ -11,6 +11,7 @@ from app.repositories.session_repository import SessionRepository
 from app.schemas import AnswerRequest, FeedbackRequest, FinishRequest, SessionCreate, SessionRead, SolutionResultRequest
 from app.services.diagnostic_service import DiagnosticError, DiagnosticService
 from app.services.summary_service import build_summary
+from app.services.knowledge_match_service import KnowledgeMatchService
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 logger = logging.getLogger(__name__)
@@ -41,9 +42,14 @@ def get_or_404(request: Request, repo: SessionRepository, session_id: str):
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create(request: Request, payload: SessionCreate, repo: SessionRepository = Depends(repository)):
     try:
-        item, node = DiagnosticService(repo).create_session(payload)
+        item, node, interpretation = DiagnosticService(repo).create_session(payload)
         request.session["diagnostic_session_id"] = item.id
-        return {"session": SessionRead.model_validate(item), "node": node, "can_go_back": False}
+        return {
+            "session": SessionRead.model_validate(item),
+            "node": node,
+            "interpretation": interpretation,
+            "can_go_back": False,
+        }
     except (DiagnosticError, KnowledgeBaseError) as exc:
         raise HTTPException(422, str(exc)) from exc
 
@@ -58,6 +64,7 @@ def read(request: Request, session_id: str, repo: SessionRepository = Depends(re
     return {
         "session": SessionRead.model_validate(item),
         "node": node,
+        "interpretation": KnowledgeMatchService.from_session(item),
         "can_go_back": repo.has_answer(item.id),
     }
 

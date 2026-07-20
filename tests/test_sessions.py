@@ -47,7 +47,7 @@ def test_header_has_local_3d_scroll_trigger_and_static_navigation(client):
     assert 'class="topbar"' in page.text
     assert '<nav>' in page.text
     assert "brand.css?v=20260715-7" in page.text
-    assert "app.js?v=20260716-1" in page.text
+    assert "app.js?v=20260720-1" in page.text
 
     javascript = (BASE_DIR / "app" / "static" / "js" / "app.js").read_text(encoding="utf-8")
     assert "initBrandScrollTrigger" in javascript

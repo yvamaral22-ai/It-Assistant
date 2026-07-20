@@ -49,6 +49,10 @@ class SessionRepository:
                 SupportSession.id.ilike(pattern), SupportSession.user_name.ilike(pattern),
                 SupportSession.computer_name.ilike(pattern), SupportSession.asset_tag.ilike(pattern),
                 SupportSession.initial_description.ilike(pattern),
+                SupportSession.interactions.any(
+                    (Interaction.node_type == "triage")
+                    & Interaction.question_text.ilike(pattern),
+                ),
             ))
         if status:
             conditions.append(SupportSession.status == status)
@@ -56,7 +60,8 @@ class SessionRepository:
             conditions.append(SupportSession.category == category)
         total = self.db.scalar(select(func.count(SupportSession.id)).where(*conditions)) or 0
         statement = (
-            select(SupportSession).where(*conditions).order_by(SupportSession.started_at.desc())
+            select(SupportSession).options(selectinload(SupportSession.interactions))
+            .where(*conditions).order_by(SupportSession.started_at.desc())
             .offset((page - 1) * page_size).limit(page_size)
         )
         return list(self.db.scalars(statement)), total

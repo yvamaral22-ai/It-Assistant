@@ -1,4 +1,8 @@
-{"category":"excel","title":"Problemas com Excel","start_node":"excel_001","nodes":{
+{"category":"excel","title":"Problemas com Excel","start_node":"excel_001","triage_rules":[
+{"id":"excel_wont_open","label":"Excel não abre ou fecha ao iniciar","target_node":"excel_001","keywords":["excel não abre","não consigo abrir o excel","erro ao iniciar o excel","excel fecha ao iniciar"]},
+{"id":"excel_file_problem","label":"Falha ao abrir uma planilha","target_node":"excel_002","keywords":["fecha ao abrir uma planilha","arquivo do excel não abre","planilha não abre","problema em um arquivo do excel","arquivo corrompido"]},
+{"id":"excel_freezing","label":"Excel travando ou congelando","target_node":"excel_002","keywords":["excel travando","excel congelando","excel não responde","planilha travada"]}
+],"nodes":{
 "excel_001":{"type":"question","text":"O Excel abre normalmente sem selecionar nenhum arquivo?","options":[{"label":"Sim","value":"yes","next":"excel_002"},{"label":"Não","value":"no","next":"excel_safe"},{"label":"Não sei","value":"unknown","next":"excel_restart"}]},
 "excel_002":{"type":"question","text":"O problema acontece com todos os arquivos?","options":[{"label":"Sim, com todos","value":"all","next":"excel_repair"},{"label":"Não, apenas com um arquivo","value":"one","next":"excel_file"},{"label":"O Excel está travando","value":"freezing","next":"excel_restart"}]},
 "excel_safe":{"type":"solution","title":"Teste o Excel em modo seguro","text":"Este teste abre o Excel sem complementos. Não altera seus arquivos.","steps":["Pressione Windows + R.","Digite excel /safe e pressione Enter.","Se abrir, informe ao suporte que o modo seguro funcionou.","Se não abrir, reinicie o computador antes de solicitar o reparo do Office."],"ask_if_resolved":true,"unresolved_next":"excel_attempt_2"},

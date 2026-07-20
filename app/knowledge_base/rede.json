@@ -1,4 +1,8 @@
-{"category":"rede","title":"Problemas de rede","start_node":"network_001","nodes":{
+{"category":"rede","title":"Problemas de rede","start_node":"network_001","triage_rules":[
+{"id":"network_no_internet","label":"Computador sem acesso à internet","target_node":"network_001","keywords":["sem internet","internet não funciona","sem acesso à rede","não conecta na internet"]},
+{"id":"network_wifi","label":"Falha na conexão Wi-Fi","target_node":"network_001","keywords":["wifi não conecta","wi fi não funciona","rede sem fio caiu","não aparece o wifi"]},
+{"id":"network_internal_resource","label":"Recurso interno indisponível","target_node":"network_001","keywords":["pasta de rede não abre","sistema interno não acessa","recurso interno indisponível","servidor não encontrado"]}
+],"nodes":{
 "network_001":{"type":"question","text":"O computador está conectado por cabo ou Wi-Fi?","options":[{"label":"Cabo","value":"cable","next":"network_cable"},{"label":"Wi-Fi","value":"wifi","next":"network_wifi"},{"label":"Não sei","value":"unknown","next":"network_test"}]},
 "network_cable":{"type":"solution","title":"Verifique a conexão por cabo","text":"Não altere equipamentos de rede do setor.","steps":["Confirme se o cabo está firme no computador.","Observe se o ícone de rede mostra conexão.","Teste um site público e depois um recurso interno.","Execute o solucionador de problemas de rede do Windows, sem aplicar alterações administrativas."],"ask_if_resolved":true,"unresolved_next":"network_attempt_2"},
 "network_wifi":{"type":"solution","title":"Verifique o Wi-Fi","text":"Use somente a rede corporativa autorizada.","steps":["Confirme que o Wi-Fi está ligado e o modo avião desligado.","Selecione a rede corporativa já configurada.","Não informe sua senha neste assistente.","Teste um site público e um recurso interno."],"ask_if_resolved":true,"unresolved_next":"network_attempt_2"},

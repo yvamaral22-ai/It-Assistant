@@ -1,6 +1,7 @@
 {% extends "base.html" %}{% block title %}Diagnóstico · IT Self-Service Assistant{% endblock %}
 {% block content %}<section id="diagnostic" data-category="{{ category }}">
   <div class="progress"><span id="progress-label">Iniciando diagnóstico</span><div><i id="progress-bar"></i></div></div>
+  <aside id="diagnostic-interpretation" class="diagnostic-interpretation" hidden aria-live="polite"><span class="eyebrow">ANÁLISE INICIAL</span><strong id="interpretation-label"></strong><p id="interpretation-message"></p></aside>
   <article class="panel diagnostic-card" id="node-card" tabindex="-1" aria-live="polite"><p>Carregando…</p></article>
   <p id="diagnostic-error" class="error" role="alert"></p>
   <div class="actions"><button id="back-button" class="secondary" hidden>← Voltar</button><a href="/" class="link" id="leave-link">Abandonar diagnóstico</a></div>

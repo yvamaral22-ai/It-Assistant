@@ -1,4 +1,8 @@
-{"category":"windows","title":"Problemas com Windows","start_node":"windows_001","nodes":{
+{"category":"windows","title":"Problemas com Windows","start_node":"windows_001","triage_rules":[
+{"id":"windows_slow","label":"Computador ou Windows lento","target_node":"windows_001","keywords":["computador lento","windows lento","notebook lento","demora para abrir tudo"]},
+{"id":"windows_app_frozen","label":"Aplicativo travado ou sem responder","target_node":"windows_001","keywords":["aplicativo travou","programa não responde","aplicativo congelado","programa fechando sozinho"]},
+{"id":"windows_low_disk","label":"Pouco espaço no disco","target_node":"windows_001","keywords":["pouco espaço em disco","disco cheio","unidade c cheia","sem espaço para salvar"]}
+],"nodes":{
 "windows_001":{"type":"question","text":"Qual é o principal sintoma?","options":[{"label":"Computador lento","value":"slow","next":"windows_restart"},{"label":"Um aplicativo travou","value":"app","next":"windows_task"},{"label":"Pouco espaço em disco","value":"disk","next":"windows_disk"}]},
 "windows_restart":{"type":"solution","title":"Reinicie e verifique atualizações","text":"Reiniciar conclui atualizações pendentes e libera recursos.","steps":["Salve todos os trabalhos.","Reinicie pelo menu Iniciar, não apenas desligue a tela.","Após entrar, aguarde alguns minutos.","Abra Configurações > Windows Update e apenas verifique se há atualização pendente."],"ask_if_resolved":true,"unresolved_next":"windows_attempt_2"},
 "windows_task":{"type":"solution","title":"Encerre somente o aplicativo travado","text":"Use o Gerenciador de Tarefas com cuidado.","steps":["Pressione Ctrl + Shift + Esc.","Na lista de processos, localize o aplicativo travado.","Selecione-o e clique em Finalizar tarefa.","Abra o aplicativo novamente."],"ask_if_resolved":true,"unresolved_next":"windows_attempt_2"},

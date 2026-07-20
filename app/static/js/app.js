@@ -39,6 +39,14 @@ if (root) {
   const sessionId = sessionStorage.getItem('it-session-id'); let count = 0; let canGoBack = false;
   const card = document.querySelector('#node-card'), error = document.querySelector('#diagnostic-error');
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  const renderInterpretation = interpretation => {
+    const box = document.querySelector('#diagnostic-interpretation');
+    if (!box || !interpretation) return;
+    document.querySelector('#interpretation-label').textContent = interpretation.label;
+    document.querySelector('#interpretation-message').textContent = interpretation.message;
+    box.dataset.confidence = interpretation.confidence_level;
+    box.hidden = false;
+  };
   const render = (node, nodeId) => {
     count++; document.querySelector('#progress-label').textContent = `Etapa ${count} do diagnóstico`;
     document.querySelector('#progress-bar').style.width = `${Math.min(90, 12 + count * 14)}%`;
@@ -48,7 +56,7 @@ if (root) {
         try { const result = await api(`/api/sessions/${sessionId}/answer`, {method:'POST',body:JSON.stringify({node_id:nodeId,value:button.dataset.value})}); canGoBack = true; render(result.node,result.node_id); } catch(exc){error.textContent=exc.message;}
       });
     } else if (node.type === 'solution') {
-      card.innerHTML = `<span class="eyebrow">ORIENTAÇÃO</span><h1>${escapeHtml(node.title)}</h1><p>${escapeHtml(node.text)}</p>${node.media?`<img class="solution-media" src="/static/${escapeHtml(node.media)}" alt="${escapeHtml(node.media_alt||'Ilustração da orientação')}">`:''}<ol class="steps">${(node.steps||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ol>${node.ask_if_resolved ? '<h2>A orientação resolveu o problema?</h2><button class="option finish" data-status="resolved">Sim, resolveu</button><button class="option finish" data-status="unresolved">Não resolveu</button><button class="option finish" data-status="not_tested">Ainda não testei</button>' : '<button class="primary" id="continue">Continuar</button>'}`;
+      card.innerHTML = `<span class="eyebrow">ORIENTAÇÃO</span><h1>${escapeHtml(node.title)}</h1><p>${escapeHtml(node.text)}</p>${node.media?`<img class="solution-media" src="/static/${escapeHtml(node.media)}" alt="${escapeHtml(node.media_alt||'Ilustração da orientação')}">`:''}<ol class="steps">${(node.steps||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ol>${node.knowledge_source?`<p class="knowledge-source">Fonte: ${escapeHtml(node.knowledge_source.label)} · ${escapeHtml(node.knowledge_source.reference)}</p>`:''}${node.ask_if_resolved ? '<h2>A orientação resolveu o problema?</h2><button class="option finish" data-status="resolved">Sim, resolveu</button><button class="option finish" data-status="unresolved">Não resolveu</button><button class="option finish" data-status="not_tested">Ainda não testei</button>' : '<button class="primary" id="continue">Continuar</button>'}`;
       card.querySelectorAll('.finish').forEach(button => button.onclick = () => solutionResult(button.dataset.status));
       const next = card.querySelector('#continue'); if(next) next.onclick = async()=>{const r=await api(`/api/sessions/${sessionId}/continue`,{method:'POST'});render(r.node,r.node_id)};
     } else { solutionResult('unresolved'); }
@@ -83,7 +91,7 @@ if (root) {
       window.location.replace('/');
     }
   };
-  if(!sessionId){card.innerHTML='<p class="error">Sessão não encontrada. Volte ao início.</p>';} else api(`/api/sessions/${sessionId}`).then(r=>{canGoBack=r.can_go_back;render(r.node,r.session.current_node_id)}).catch(exc=>error.textContent=exc.message);
+  if(!sessionId){card.innerHTML='<p class="error">Sessão não encontrada. Volte ao início.</p>';} else api(`/api/sessions/${sessionId}`).then(r=>{canGoBack=r.can_go_back;renderInterpretation(r.interpretation);render(r.node,r.session.current_node_id)}).catch(exc=>error.textContent=exc.message);
 }
 
 function bindCopy(){document.querySelectorAll('[data-copy-target]').forEach(button=>button.onclick=async()=>{await navigator.clipboard.writeText(document.getElementById(button.dataset.copyTarget).textContent);button.textContent='Resumo copiado!';});} bindCopy();

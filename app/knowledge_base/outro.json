@@ -1,4 +1,8 @@
-{"category":"outro","title":"Outro problema de TI","start_node":"other_001","nodes":{
+{"category":"outro","title":"Outro problema de TI","start_node":"other_001","triage_rules":[
+{"id":"other_system_error","label":"Erro em sistema corporativo","target_node":"other_001","keywords":["erro no sistema","sistema não abre","sistema bloqueado","falha no sistema corporativo"]},
+{"id":"other_access_issue","label":"Problema de acesso ou permissão","target_node":"other_001","keywords":["acesso negado","sem permissão","usuário bloqueado","não tenho acesso"]},
+{"id":"other_device_issue","label":"Problema em outro equipamento","target_node":"other_001","keywords":["equipamento não funciona","dispositivo não reconhecido","problema no equipamento"]}
+],"nodes":{
 "other_001":{"type":"question","text":"O problema impede completamente seu trabalho?","options":[{"label":"Sim","value":"yes","next":"other_urgent"},{"label":"Não","value":"no","next":"other_collect"},{"label":"Não sei","value":"unknown","next":"other_collect"}]},
 "other_urgent":{"type":"solution","title":"Registre as informações essenciais","text":"Evite repetir ações que possam causar perda de dados.","steps":["Anote o nome do sistema ou equipamento.","Copie a mensagem de erro, sem incluir senhas.","Informe quando o problema começou e quantas pessoas são afetadas."],"ask_if_resolved":true,"unresolved_next":"other_attempt_2"},
 "other_collect":{"type":"solution","title":"Faça uma verificação segura","text":"Uma reinicialização simples pode resolver falhas temporárias.","steps":["Salve seu trabalho.","Feche e abra novamente apenas o aplicativo afetado.","Se não funcionar, reinicie o computador."],"ask_if_resolved":true,"unresolved_next":"other_attempt_2"},

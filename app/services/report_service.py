@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 
 from sqlalchemy import case, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models import Interaction, SupportSession
 
@@ -77,6 +77,7 @@ class ReportService:
             "departments": self._ranking(SupportSession.department, conditions, exclude_empty=True),
             "locations": self._ranking(SupportSession.location, conditions, exclude_empty=True),
             "issue_types": self._ranking(SupportSession.issue_type, conditions, exclude_empty=True),
+            "intents": self._intent_ranking(conditions),
             "problems": self._problem_ranking(conditions),
             "solutions": self._solution_effectiveness(conditions),
             "attempts": operational["attempts"],
@@ -245,6 +246,25 @@ class ReportService:
         )
         return [self._rank_item(row.name, row.count, row.resolved or 0) for row in self.db.execute(query)]
 
+    def _intent_ranking(self, conditions: list) -> list[dict]:
+        query = (
+            select(
+                Interaction.question_text.label("name"),
+                func.count(SupportSession.id).label("count"),
+                func.sum(case((SupportSession.status == "resolved", 1), else_=0)).label("resolved"),
+            )
+            .join(SupportSession, SupportSession.id == Interaction.session_id)
+            .where(
+                Interaction.node_type == "triage",
+                Interaction.question_text.is_not(None),
+                *conditions,
+            )
+            .group_by(Interaction.question_text)
+            .order_by(func.count(SupportSession.id).desc(), Interaction.question_text)
+            .limit(10)
+        )
+        return [self._rank_item(row.name, row.count, row.resolved or 0) for row in self.db.execute(query)]
+
     def _trend(self, conditions: list) -> list[dict]:
         day = func.date(SupportSession.started_at)
         query = (
@@ -267,7 +287,7 @@ class ReportService:
     def export_csv(self, filters: ReportFilters) -> str:
         sessions = list(
             self.db.scalars(
-                select(SupportSession)
+                select(SupportSession).options(selectinload(SupportSession.interactions))
                 .where(*self._conditions(filters))
                 .order_by(SupportSession.started_at.desc())
             )
@@ -276,14 +296,18 @@ class ReportService:
         writer = csv.writer(output, delimiter=";")
         writer.writerow([
             "ID", "Usuário", "Setor", "Localidade", "Computador",
-            "Categoria", "Tipo do problema", "Status", "Avaliação",
+            "Categoria", "Tipo do problema", "Problema interpretado", "Status", "Avaliação",
             "Problema informado", "Início", "Término",
         ])
         for item in sessions:
+            triage = next(
+                (interaction for interaction in item.interactions if interaction.node_type == "triage"),
+                None,
+            )
             writer.writerow([
                 item.id, self._csv_safe(item.user_name), self._csv_safe(item.department),
                 self._csv_safe(item.location), self._csv_safe(item.computer_name), item.category,
-                self._csv_safe(item.issue_type), item.status,
+                self._csv_safe(item.issue_type), self._csv_safe(triage.question_text if triage else None), item.status,
                 item.rating or "",
                 self._csv_safe(item.initial_description), item.started_at.isoformat(),
                 item.finished_at.isoformat() if item.finished_at else "",

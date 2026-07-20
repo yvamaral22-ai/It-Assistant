@@ -22,6 +22,8 @@ def test_reports_page_has_operational_rankings(authenticated_client, session_pay
     assert response.status_code == 200
     assert "Relatórios de atendimento" in response.text
     assert "Categorias mais acionadas" in response.text
+    assert "Problemas interpretados" in response.text
+    assert "Excel não abre ou fecha ao iniciar" in response.text
     assert "ANÁLISE AUTOMÁTICA" in response.text
     assert "Pessoas com mais atendimentos" in response.text
     assert "Eficácia das soluções" in response.text

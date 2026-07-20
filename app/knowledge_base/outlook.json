@@ -1,4 +1,8 @@
-{"category":"outlook","title":"Problemas com Outlook","start_node":"outlook_001","nodes":{
+{"category":"outlook","title":"Problemas com Outlook","start_node":"outlook_001","triage_rules":[
+{"id":"outlook_wont_open","label":"Outlook não abre ou trava","target_node":"outlook_001","keywords":["outlook não abre","outlook travando","outlook não responde","outlook fecha sozinho"]},
+{"id":"outlook_mail_flow","label":"Outlook não envia ou recebe mensagens","target_node":"outlook_001","keywords":["outlook não envia","outlook não recebe","email não chega","email preso na caixa de saída","não consigo enviar email"]},
+{"id":"outlook_navpane_error","label":"Erro de XML ou painel de navegação","target_node":"outlook_002","keywords":["xml inválido","painel de navegação","cannot start microsoft outlook","não é possível iniciar o microsoft outlook"]}
+],"nodes":{
 "outlook_001":{"type":"question","text":"O Outlook abre?","options":[{"label":"Sim, mas trava","value":"freezes","next":"outlook_restart"},{"label":"Não abre","value":"no","next":"outlook_002"},{"label":"Abre, mas não envia ou recebe","value":"mail","next":"outlook_network"}]},
 "outlook_002":{"type":"question","text":"A mensagem menciona XML inválido ou painel de navegação?","options":[{"label":"Sim","value":"yes","next":"outlook_navpane"},{"label":"Não","value":"no","next":"outlook_restart"},{"label":"Não sei","value":"unknown","next":"outlook_restart"}]},
 "outlook_navpane":{"type":"solution","title":"Redefina o painel de navegação","text":"O comando redefine somente a configuração do painel do Outlook.","steps":["Feche o Outlook.","Pressione Windows + R.","Digite outlook.exe /resetnavpane e pressione Enter.","Tente abrir o Outlook novamente."],"ask_if_resolved":true,"unresolved_next":"outlook_attempt_2"},

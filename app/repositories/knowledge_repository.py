@@ -46,6 +46,32 @@ class KnowledgeRepository:
         start = graph.get("start_node")
         if not isinstance(nodes, dict) or start not in nodes:
             raise KnowledgeBaseError("Nó inicial inexistente.")
+        triage_targets: list[str] = []
+        rules = graph.get("triage_rules", [])
+        if not isinstance(rules, list):
+            raise KnowledgeBaseError("As regras de interpretação devem ser uma lista.")
+        rule_ids: set[str] = set()
+        for rule in rules:
+            if not isinstance(rule, dict):
+                raise KnowledgeBaseError("Regra de interpretação inválida.")
+            rule_id = rule.get("id")
+            label = rule.get("label")
+            target = rule.get("target_node")
+            keywords = rule.get("keywords")
+            if not isinstance(rule_id, str) or not rule_id or rule_id in rule_ids:
+                raise KnowledgeBaseError("Identificador de interpretação inválido ou duplicado.")
+            if not isinstance(label, str) or not label.strip() or len(label) > 180:
+                raise KnowledgeBaseError(f"Descrição de interpretação inválida: {rule_id}")
+            if target not in nodes or nodes[target].get("type") != "question":
+                raise KnowledgeBaseError(f"A interpretação deve levar a uma pergunta: {rule_id}")
+            if (
+                not isinstance(keywords, list)
+                or not keywords
+                or any(not isinstance(item, str) or not item.strip() or len(item) > 120 for item in keywords)
+            ):
+                raise KnowledgeBaseError(f"Termos de interpretação inválidos: {rule_id}")
+            rule_ids.add(rule_id)
+            triage_targets.append(target)
         for node_id, node in nodes.items():
             node_type = node.get("type")
             if node_type not in {"question", "solution", "end"}:
@@ -63,7 +89,8 @@ class KnowledgeRepository:
                 for field in ("next", "unresolved_next"):
                     if node.get(field) and node[field] not in nodes:
                         raise KnowledgeBaseError(f"Destino inexistente: {node[field]}")
-        KnowledgeRepository._check_cycles(nodes, start)
+        for entrypoint in {start, *triage_targets}:
+            KnowledgeRepository._check_cycles(nodes, entrypoint)
 
     @staticmethod
     def _check_cycles(nodes: dict, start: str) -> None:

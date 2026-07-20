@@ -39,7 +39,8 @@
 
 <section class="report-grid">
   {{ ranking('Categorias mais acionadas', 'Volume e taxa de resolução por categoria.', report.categories, max_values.categories) }}
-  {{ ranking('Problemas mais recorrentes', 'Primeiro sintoma identificado em cada diagnóstico.', report.problems, max_values.problems, 'wide') }}
+  {{ ranking('Problemas interpretados', 'Classificação do relato feita pela base aprovada pela TI.', report.intents, max_values.intents, 'wide') }}
+  {{ ranking('Respostas iniciais mais recorrentes', 'Primeira resposta confirmada em cada diagnóstico.', report.problems, max_values.problems, 'wide') }}
 </section>
 <section class="report-grid"><div>{{ ranking('Eficácia das soluções', 'Taxa de sucesso de cada orientação avaliada.', report.solutions, max_values.solutions) }}</div><div>{{ volume_ranking('Resolução por tentativa', 'Em qual orientação o usuário confirmou a solução.', report.attempts, max_values.attempts) }}</div></section>
 <section class="report-grid"><div>{{ ranking('Tipos de problema', 'Classificação estruturada informada na abertura.', report.issue_types, max_values.issue_types) }}</div><div>{{ ranking('Máquinas recorrentes', 'Computadores com maior volume de atendimentos.', report.machines, max_values.machines) }}</div></section>

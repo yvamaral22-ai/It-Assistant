@@ -1,4 +1,8 @@
-{"category":"navegador","title":"Problemas com navegador","start_node":"browser_001","nodes":{
+{"category":"navegador","title":"Problemas com navegador","start_node":"browser_001","triage_rules":[
+{"id":"browser_one_site","label":"Um site específico não abre","target_node":"browser_001","keywords":["um site não abre","site específico não abre","página não carrega","erro ao acessar o site"]},
+{"id":"browser_all_sites","label":"Nenhum site abre","target_node":"browser_001","keywords":["nenhum site abre","navegador sem internet","todos os sites estão fora","não abre nenhuma página"]},
+{"id":"browser_security_error","label":"Aviso de certificado ou segurança","target_node":"browser_001","keywords":["erro de certificado","conexão não segura","certificado inválido","sua conexão não é particular"]}
+],"nodes":{
 "browser_001":{"type":"question","text":"Outros sites abrem normalmente?","options":[{"label":"Sim","value":"yes","next":"browser_private"},{"label":"Não","value":"no","next":"browser_other"},{"label":"Não sei","value":"unknown","next":"browser_other"}]},
 "browser_private":{"type":"solution","title":"Teste em janela anônima e limpe o cache","text":"O teste ajuda a identificar dados antigos ou extensões.","steps":["Abra uma janela InPrivate ou anônima.","Acesse a mesma página.","Se funcionar, limpe apenas imagens e arquivos em cache nas configurações do navegador.","Não apague senhas salvas sem necessidade."],"ask_if_resolved":true,"unresolved_next":"browser_attempt_2"},
 "browser_other":{"type":"question","text":"O site abre em outro navegador?","options":[{"label":"Sim","value":"yes","next":"browser_cache"},{"label":"Não","value":"no","next":"browser_proxy"},{"label":"Não tenho outro navegador","value":"unknown","next":"browser_proxy"}]},
