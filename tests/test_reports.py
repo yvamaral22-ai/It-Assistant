@@ -35,6 +35,20 @@ def test_report_filters_reject_invalid_period(authenticated_client):
     assert response.status_code == 422
 
 
+def test_report_filters_accept_empty_form_values(authenticated_client):
+    client = authenticated_client
+    query = "date_from=&date_to=&category=&status="
+    response = client.get(f"/admin/reports?{query}")
+    assert response.status_code == 200
+    export = client.get(f"/admin/reports/export.csv?{query}")
+    assert export.status_code == 200
+
+
+def test_report_filters_reject_malformed_date(authenticated_client):
+    response = authenticated_client.get("/admin/reports?date_from=17-07-2026")
+    assert response.status_code == 422
+
+
 def test_reports_csv_export_and_formula_protection(authenticated_client, session_payload):
     client = authenticated_client
     payload = {**session_payload, "user_name": "=DANGEROUS()"}
