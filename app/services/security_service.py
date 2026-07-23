@@ -21,10 +21,17 @@ def validate_security_settings(settings: Settings) -> None:
             raise RuntimeError("APP_DEBUG deve permanecer desativado em produção.")
         if not settings.public_base_url.lower().startswith("https://"):
             raise RuntimeError("PUBLIC_BASE_URL deve usar HTTPS em produção.")
+        if settings.database_url.lower().startswith("sqlite"):
+            raise RuntimeError("SQLite deve ficar restrito ao piloto; use PostgreSQL em produção.")
 
 
 def request_too_large(request: Request, settings: Settings) -> Response | None:
     raw_length = request.headers.get("content-length")
+    transfer_encoding = request.headers.get("transfer-encoding", "")
+    if "chunked" in transfer_encoding.lower():
+        return JSONResponse({"detail": "Requisição sem tamanho declarado não permitida."}, status_code=411)
+    if request.method in UNSAFE_METHODS and request.headers.get("content-type") and not raw_length:
+        return JSONResponse({"detail": "Cabeçalho Content-Length obrigatório."}, status_code=411)
     if not raw_length:
         return None
     try:

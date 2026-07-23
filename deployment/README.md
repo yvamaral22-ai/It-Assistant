@@ -29,7 +29,9 @@ O arquivo `iis/web.config.example` é uma referência para URL Rewrite + ARR. A 
 powershell -ExecutionPolicy Bypass -File scripts\harden_data_permissions.ps1 -ServiceAccount "DOMINIO\conta-servico"
 ```
 
-- Use PostgreSQL e criptografia de disco para dados corporativos. SQLite deve ficar restrito ao piloto de baixo volume.
+- Use PostgreSQL e criptografia de disco para dados corporativos. O app recusa iniciar em produção com SQLite.
+- Mantenha `READY_DETAILS_ENABLED=false` em produção para não expor detalhes operacionais em `/ready`.
+- Ajuste `PUBLIC_CREATE_LIMIT`, `PUBLIC_WRITE_LIMIT` e `LOGIN_ATTEMPT_LIMIT` conforme o volume real medido; para múltiplos servidores, substitua o arquivo local de rate limit por controle centralizado no proxy/WAF/Redis.
 - Envie logs de auditoria para a solução corporativa de monitoramento e teste restaurações de backup periodicamente.
 
 ## Manutenção

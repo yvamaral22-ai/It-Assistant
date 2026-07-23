@@ -140,6 +140,7 @@ def test_ready_checks_database_and_knowledge(client):
     response = client.get("/ready")
     assert response.status_code == 200
     assert response.json()["status"] == "ready"
+    assert "database" not in response.json()
 
 
 def test_alembic_builds_new_database(tmp_path):

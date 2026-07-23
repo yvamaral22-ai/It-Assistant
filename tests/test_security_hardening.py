@@ -39,6 +39,21 @@ def test_oversized_request_is_rejected_before_parsing(client):
     assert response.status_code == 413
 
 
+def test_chunked_writes_are_rejected(client):
+    response = client.post(
+        "/api/sessions",
+        content=b'{"category":"excel"}',
+        headers={"content-type": "application/json", "transfer-encoding": "chunked"},
+    )
+    assert response.status_code == 411
+
+
+def test_public_session_creation_is_rate_limited(client, session_payload):
+    statuses = [client.post("/api/sessions", json=session_payload).status_code for _ in range(21)]
+    assert statuses[:20] == [201] * 20
+    assert statuses[20] == 429
+
+
 def test_public_session_response_is_minimal_and_bound_to_browser(client, session_payload):
     created = client.post("/api/sessions", json=session_payload)
     assert created.status_code == 201
@@ -78,3 +93,16 @@ def test_production_rejects_default_secret_and_non_https_origin():
         validate_security_settings(insecure)
     with pytest.raises(RuntimeError, match="SECRET_KEY"):
         get_session_secret(insecure)
+
+
+def test_production_rejects_sqlite_database():
+    insecure = Settings(
+        _env_file=None,
+        app_env="production",
+        secret_key="strong-production-secret",
+        public_base_url="https://assistant.internal",
+        allowed_hosts="assistant.internal",
+        database_url="sqlite:///./data/it_assistant.db",
+    )
+    with pytest.raises(RuntimeError, match="SQLite"):
+        validate_security_settings(insecure)

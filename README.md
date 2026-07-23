@@ -103,7 +103,8 @@ Consulte `deployment/README.md` para inicialização automática, backup diário
 ## Segurança
 
 - Administração, histórico, relatórios e exportações exigem autenticação e permissão.
-- Formulários administrativos usam CSRF, cookie assinado e limitação de login.
+- Formulários administrativos usam CSRF, cookie assinado e limitação persistente de login.
+- APIs públicas de diagnóstico têm limite por IP para reduzir spam, abuso e crescimento artificial do banco.
 - Cada diagnóstico fica vinculado à sessão assinada do navegador; conhecer outro UUID não concede acesso ao atendimento.
 - As APIs públicas retornam somente o estado mínimo necessário e não devolvem identificação, máquina ou descrição.
 - Respostas usam CSP, proteção contra framing e MIME sniffing, política de origem, `no-store` para dados dinâmicos e hosts permitidos.
@@ -112,6 +113,8 @@ Consulte `deployment/README.md` para inicialização automática, backup diário
 - CSV é protegido contra fórmulas de planilha.
 - O diagnóstico não solicita senha, não executa comandos e não aceita código do navegador.
 - Em produção, configure `APP_ENV=production`, `APP_DEBUG=false`, `SECRET_KEY` forte, `ALLOWED_HOSTS`, `PUBLIC_BASE_URL` HTTPS e use `scripts\run_server_production.bat` atrás do IIS.
+- O app recusa iniciar em produção com SQLite; use PostgreSQL para dados reais.
+- `/ready` retorna apenas `{"status":"ready"}` por padrão. Detalhes de banco/conhecimento só devem ser ativados fora de produção com `READY_DETAILS_ENABLED=true`.
 
 ## Limitações
 

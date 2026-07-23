@@ -19,6 +19,7 @@ from app.services.security_service import (
     add_security_headers, invalid_cross_origin_request, request_too_large,
     validate_security_settings,
 )
+from app.services.rate_limit_service import FileRateLimiter, client_ip
 from app.database_migrations import run_migrations
 from app.database import engine
 from app.repositories.knowledge_repository import KnowledgeRepository
@@ -61,6 +62,18 @@ async def lifespan(_: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
     validate_security_settings(settings)
+    public_create_limiter = FileRateLimiter(
+        settings.rate_limit_store_path,
+        "public_create",
+        settings.public_create_limit,
+        settings.public_create_window_seconds,
+    )
+    public_write_limiter = FileRateLimiter(
+        settings.rate_limit_store_path,
+        "public_write",
+        settings.public_write_limit,
+        settings.public_write_window_seconds,
+    )
     application = FastAPI(
         title=settings.app_name,
         debug=settings.app_debug,
@@ -104,6 +117,17 @@ def create_app() -> FastAPI:
             )
             add_security_headers(rejected, request, settings)
             return rejected
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.url.path.startswith("/api/sessions"):
+            limiter = public_create_limiter if request.url.path == "/api/sessions" else public_write_limiter
+            key = client_ip(request)
+            if not limiter.allowed(key):
+                rejected = JSONResponse(
+                    status_code=429,
+                    content={"detail": "Muitas requisições. Aguarde alguns minutos e tente novamente."},
+                )
+                add_security_headers(rejected, request, settings)
+                return rejected
+            limiter.hit(key)
         if settings.maintenance_mode and not request.url.path.startswith(("/admin", "/health", "/ready", "/static")):
             response = HTMLResponse(
                 "<main style='font-family:system-ui;max-width:700px;margin:10vh auto;padding:24px'>"
@@ -123,8 +147,10 @@ def create_app() -> FastAPI:
         try:
             with engine.connect() as connection:
                 connection.execute(sql_text("SELECT 1"))
-            categories = len(KnowledgeRepository().categories())
-            return {"status": "ready", "database": "ok", "knowledge_categories": categories}
+            if settings.ready_details_enabled and not settings.is_production:
+                categories = len(KnowledgeRepository().categories())
+                return {"status": "ready", "database": "ok", "knowledge_categories": categories}
+            return {"status": "ready"}
         except (OSError, ValueError, SQLAlchemyError) as exc:
             logger.error("Falha de prontidão: %s", type(exc).__name__)
             return JSONResponse(status_code=503, content={"status": "not_ready"})

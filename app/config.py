@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     session_max_age_seconds: int = 7_200
     max_request_body_bytes: int = 1_048_576
     api_docs_enabled: bool = False
+    rate_limit_store_path: str = "data/rate_limits.json"
+    public_create_limit: int = 20
+    public_create_window_seconds: int = 300
+    public_write_limit: int = 120
+    public_write_window_seconds: int = 300
+    login_attempt_limit: int = 5
+    login_attempt_window_seconds: int = 300
+    ready_details_enabled: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -58,3 +66,8 @@ def get_session_secret(settings: Settings) -> str:
     value = secrets.token_urlsafe(48)
     secret_file.write_text(value, encoding="utf-8")
     return value
+
+
+def resolve_data_path(value: str) -> Path:
+    path = Path(value)
+    return path if path.is_absolute() else BASE_DIR / path

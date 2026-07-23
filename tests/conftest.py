@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.config import get_settings, resolve_data_path
 from app.database import Base, get_db
 from app.main import app
 from app.services.auth_service import AuthService
@@ -13,6 +14,8 @@ from app.services.auth_service import AuthService
 
 @pytest.fixture
 def client():
+    rate_limit_store = resolve_data_path(get_settings().rate_limit_store_path)
+    rate_limit_store.unlink(missing_ok=True)
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     TestingSession = sessionmaker(bind=engine, expire_on_commit=False)
     Base.metadata.create_all(engine)
@@ -26,6 +29,7 @@ def client():
         test_client.db_factory = TestingSession
         yield test_client
     app.dependency_overrides.clear()
+    rate_limit_store.unlink(missing_ok=True)
 
 
 @pytest.fixture

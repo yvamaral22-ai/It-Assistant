@@ -1,8 +1,5 @@
 import logging
 import secrets
-import time
-from collections import defaultdict, deque
-from threading import Lock
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -10,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from app.config import BASE_DIR
+from app.config import BASE_DIR, get_settings
 from app.database import get_db
 from app.models import AuditLog, User
 from app.repositories.knowledge_repository import KnowledgeBaseError, KnowledgeRepository
@@ -20,39 +17,20 @@ from app.services.access_control import (
 )
 from app.services.audit_service import AuditService
 from app.services.knowledge_version_service import KnowledgeVersionService
+from app.services.rate_limit_service import FileRateLimiter, client_ip
 
 router = APIRouter(prefix="/admin", tags=["master-control"])
 templates = Jinja2Templates(directory=BASE_DIR / "app" / "templates")
 logger = logging.getLogger(__name__)
 
 
-class LoginLimiter:
-    """Small in-memory limiter for local login brute-force protection."""
-
-    def __init__(self, attempts: int = 5, window_seconds: int = 300):
-        self.attempts = attempts
-        self.window_seconds = window_seconds
-        self._entries: dict[str, deque[float]] = defaultdict(deque)
-        self._lock = Lock()
-
-    def allowed(self, client: str) -> bool:
-        now = time.monotonic()
-        with self._lock:
-            entries = self._entries[client]
-            while entries and now - entries[0] > self.window_seconds:
-                entries.popleft()
-            return len(entries) < self.attempts
-
-    def failed(self, client: str) -> None:
-        with self._lock:
-            self._entries[client].append(time.monotonic())
-
-    def clear(self, client: str) -> None:
-        with self._lock:
-            self._entries.pop(client, None)
-
-
-limiter = LoginLimiter()
+settings = get_settings()
+limiter = FileRateLimiter(
+    settings.rate_limit_store_path,
+    "login",
+    settings.login_attempt_limit,
+    settings.login_attempt_window_seconds,
+)
 
 
 def csrf_token(request: Request) -> str:
@@ -94,14 +72,14 @@ def login(
     db: Session = Depends(get_db),
 ):
     verify_csrf(request, csrf)
-    client = request.client.host if request.client else "unknown"
+    client = client_ip(request)
     if not limiter.allowed(client):
         return templates.TemplateResponse(
             request, "login.html", login_context(request, "Muitas tentativas. Aguarde cinco minutos."), status_code=429
         )
     user = AuthService(db).authenticate(username, password)
     if not user or user.role not in ROLE_PERMISSIONS:
-        limiter.failed(client)
+        limiter.hit(client)
         logger.warning("Falha de autenticação do painel master")
         return templates.TemplateResponse(
             request, "login.html", login_context(request, "Usuário ou senha inválidos."), status_code=401
