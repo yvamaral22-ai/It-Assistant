@@ -115,6 +115,8 @@ Consulte `deployment/README.md` para inicialização automática, backup diário
 - Em produção, configure `APP_ENV=production`, `APP_DEBUG=false`, `SECRET_KEY` forte, `ALLOWED_HOSTS`, `PUBLIC_BASE_URL` HTTPS e use `scripts\run_server_production.bat` atrás do IIS.
 - O app recusa iniciar em produção com SQLite; use PostgreSQL para dados reais.
 - `/ready` retorna apenas `{"status":"ready"}` por padrão. Detalhes de banco/conhecimento só devem ser ativados fora de produção com `READY_DETAILS_ENABLED=true`.
+- A checklist, matriz de permissões e regras de publicação ficam em `SECURITY.md`.
+- Antes de publicar, execute `.\scripts\security_check.ps1`.
 
 ## Limitações
 

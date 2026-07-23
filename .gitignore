@@ -6,6 +6,8 @@ __pycache__/
 data/*.db
 data/*.db-*
 data/.session_secret
+data/rate_limits.json
+data/rate_limits.json.tmp
 data/backups/
 data/logs/
 data/screenshots/
