@@ -16,6 +16,12 @@ def validate_security_settings(settings: Settings) -> None:
         raise RuntimeError("SESSION_MAX_AGE_SECONDS não pode ser inferior a 300.")
     if not settings.allowed_hosts_list or "*" in settings.allowed_hosts_list:
         raise RuntimeError("ALLOWED_HOSTS deve listar explicitamente os endereços permitidos.")
+    if settings.web_search_timeout_seconds < 5:
+        raise RuntimeError("WEB_SEARCH_TIMEOUT_SECONDS não pode ser inferior a 5.")
+    if settings.web_search_cache_seconds < 60:
+        raise RuntimeError("WEB_SEARCH_CACHE_SECONDS não pode ser inferior a 60.")
+    if settings.web_search_enabled and not settings.web_search_allowed_domains_list:
+        raise RuntimeError("WEB_SEARCH_ALLOWED_DOMAINS deve listar ao menos um domínio confiável.")
     if settings.is_production:
         if settings.app_debug:
             raise RuntimeError("APP_DEBUG deve permanecer desativado em produção.")

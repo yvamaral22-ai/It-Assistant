@@ -18,7 +18,8 @@ def test_invalid_answer(client, session_payload):
     assert response.status_code == 422
 
 
-def test_unresolved_tries_three_solutions_before_summary(client, session_payload):
+def test_unresolved_tries_three_solutions_before_summary(client, session_payload, monkeypatch):
+    monkeypatch.setattr("app.api.routes_sessions.get_settings", lambda: type("Settings", (), {"web_search_enabled": False})())
     created = client.post("/api/sessions", json=session_payload).json()
     session_id = created["session"]["id"]
     first = client.post(

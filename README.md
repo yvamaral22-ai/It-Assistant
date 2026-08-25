@@ -44,6 +44,21 @@ python scripts\create_master_user.py --if-missing
 python run.py
 ```
 
+### Pesquisa web interpretada
+
+Depois que as orientações locais se esgotarem, o assistente consulta gratuitamente a página pública de pesquisa do Brave, lê páginas técnicas permitidas e apresenta uma nova orientação dentro do próprio diagnóstico. A interpretação é determinística: extrai passos em português, usa somente termos higienizados do problema e bloqueia instruções administrativas ou de maior risco.
+
+Configure no arquivo `.env`:
+
+```env
+WEB_SEARCH_ENABLED=true
+WEB_SEARCH_TIMEOUT_SECONDS=12
+WEB_SEARCH_CACHE_SECONDS=86400
+WEB_SEARCH_ALLOWED_DOMAINS=support.microsoft.com,learn.microsoft.com,support.google.com,support.mozilla.org,support.apple.com,helpx.adobe.com,support.hp.com,dell.com,epson.com,canon.com
+```
+
+Não há chave, conta, SDK de IA ou API paga. A lista de domínios pode ser ampliada pela TI. Resultados da internet são identificados como pesquisa interpretada e não passam a fazer parte da base aprovada pela TI. Como o recurso depende de páginas públicas, alterações no feed ou nos sites podem reduzir temporariamente os resultados.
+
 Para redefinir o master localmente:
 
 ```powershell

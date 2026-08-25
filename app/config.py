@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     glpi_enabled: bool = False
     ad_enabled: bool = False
     microsoft_graph_enabled: bool = False
+    web_search_enabled: bool = True
+    web_search_timeout_seconds: float = 12.0
+    web_search_cache_seconds: int = 86_400
+    web_search_allowed_domains: str = (
+        "support.microsoft.com,learn.microsoft.com,support.google.com,support.mozilla.org,"
+        "support.apple.com,helpx.adobe.com,support.hp.com,dell.com,epson.com,canon.com"
+    )
     maintenance_mode: bool = False
     log_level: str = "INFO"
     log_dir: str = "data/logs"
@@ -45,6 +52,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env.strip().lower() == "production"
+
+    @property
+    def web_search_allowed_domains_list(self) -> list[str]:
+        return [domain.strip().lower() for domain in self.web_search_allowed_domains.split(",") if domain.strip()]
 
 
 @lru_cache
